@@ -1,0 +1,8 @@
+smart-formatter-react/node_modules/
+smart-formatter-react/.vite/
+smart-formatter-react/.cache/
+smart-formatter-react/npm-debug.log*
+portfolio-react/node_modules/
+portfolio-react/.vite/
+portfolio-react/.cache/
+portfolio-react/npm-debug.log*

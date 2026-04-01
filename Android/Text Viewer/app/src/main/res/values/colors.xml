@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3B82F6</color>
+    <color name="colorPrimaryDark">#2563EB</color>
+    <color name="colorAccent">#F59E0B</color>
+    
+    <color name="background">#F8FAFC</color>
+    <color name="cardBackground">#FFFFFF</color>
+    <color name="readerBackground">#FAFAFA</color>
+    
+    <color name="textPrimary">#1E293B</color>
+    <color name="textSecondary">#64748B</color>
+    <color name="textHint">#94A3B8</color>
+    
+    <color name="htmlColor">#10B981</color>
+    <color name="pdfColor">#EF4444</color>
+    <color name="folderColor">#F59E0B</color>
+    <color name="allColor">#8B5CF6</color>
+    
+    <color name="chipBackground">#4B5563</color>
+    
+    <color name="divider">#E2E8F0</color>
+    
+    <!-- 夜间模式颜色 -->
+    <color name="nightBackground">#1A1A1A</color>
+    <color name="nightCardBackground">#2D2D2D</color>
+    <color name="nightTextPrimary">#E0E0E0</color>
+</resources>

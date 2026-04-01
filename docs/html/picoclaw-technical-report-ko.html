@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PicoClaw 기술 보고서 — 초경량 AI 어시스턴트 심층 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --pri:#f59e0b; --dark:#0f172a; --gray:#1e293b;
+  --red:#ef4444; --blue:#3b82f6; --green:#10b981; --purple:#8b5cf6;
+  --accent:#f97316; --cyan:#06b6d4; --light:#f8fafc;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--light);color:#334155;line-height:1.8;}
+
+.topnav{position:fixed;top:0;left:0;right:0;height:56px;background:var(--dark);display:flex;align-items:center;padding:0 28px;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,.4);}
+.topnav .logo{display:flex;align-items:center;gap:10px;}
+.topnav .logo-icon{width:34px;height:34px;background:var(--pri);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.topnav .logo-text{color:#fff;font-size:15px;font-weight:700;}
+.topnav .logo-text em{color:var(--pri);font-style:normal;}
+.topnav .spacer{flex:1;}
+.topnav .badge{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:#fbbf24;padding:3px 12px;border-radius:16px;font-size:11px;font-weight:600;}
+.topnav .date{color:rgba(255,255,255,.4);font-size:12px;margin-left:16px;}
+.toc-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;margin-right:12px;}
+
+.toc{position:fixed;top:56px;left:0;bottom:0;width:240px;background:#fff;border-right:1px solid #e2e8f0;overflow-y:auto;z-index:900;padding:16px 0;transition:transform .3s;}
+.toc h4{padding:0 18px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:10px;}
+.toc a{display:block;padding:7px 18px;color:#64748b;text-decoration:none;font-size:12.5px;border-left:3px solid transparent;transition:all .15s;}
+.toc a:hover,.toc a.on{background:rgba(245,158,11,.06);color:var(--pri);border-left-color:var(--pri);}
+.toc a.sub{padding-left:32px;font-size:11.5px;color:#94a3b8;}
+
+.main{margin-left:240px;margin-top:56px;padding:36px 44px 80px;max-width:1060px;}
+@media(max-width:860px){
+  .toc{transform:translateX(-100%);}.toc.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2);}
+  .main{margin-left:0;padding:20px 14px 60px;}.toc-btn{display:block;}
+  .grid2,.grid3{grid-template-columns:1fr!important;}
+  .hero{padding:36px 20px!important;}.hero h1{font-size:22px!important;}
+  .cmp{grid-template-columns:1fr!important;}
+}
+
+.hero{background:linear-gradient(135deg,#1a0800 0%,#2d1600 30%,var(--dark) 70%,#0c1a3a 100%);border-radius:16px;padding:56px 48px;color:#fff;margin-bottom:44px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-80px;right:-60px;width:400px;height:400px;background:radial-gradient(circle,rgba(245,158,11,.15) 0%,transparent 70%);border-radius:50%;}
+.hero::after{content:'';position:absolute;bottom:-120px;left:20%;width:500px;height:500px;background:radial-gradient(circle,rgba(59,130,246,.1) 0%,transparent 70%);border-radius:50%;}
+.hero>*{position:relative;z-index:1;}
+.hero .eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--pri);font-weight:700;margin-bottom:8px;}
+.hero h1{font-size:30px;margin-bottom:6px;line-height:1.3;}
+.hero h2{font-size:17px;font-weight:400;opacity:.7;margin-bottom:28px;}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.hero-stat{text-align:center;}.hero-stat .val{font-size:32px;font-weight:800;color:var(--pri);}.hero-stat .lbl{font-size:11px;opacity:.6;margin-top:2px;}
+
+.sec{margin-bottom:48px;}
+.anchor{display:block;position:relative;top:-80px;visibility:hidden;}
+h2.stitle{font-size:22px;color:var(--dark);margin-bottom:20px;padding-bottom:10px;border-bottom:3px solid var(--pri);display:flex;align-items:center;gap:10px;}
+h2.stitle .n{background:var(--pri);color:#fff;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+h3{font-size:17px;color:var(--dark);margin:26px 0 12px;}
+p{margin-bottom:12px;color:#475569;font-size:14.5px;}
+
+.card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #e2e8f0;margin-bottom:20px;}
+.card-h{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.card-h .ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ic-r{background:rgba(239,68,68,.1);color:var(--red);}
+.ic-b{background:rgba(59,130,246,.1);color:var(--blue);}
+.ic-g{background:rgba(16,185,129,.1);color:var(--green);}
+.ic-p{background:rgba(139,92,246,.1);color:var(--purple);}
+.ic-o{background:rgba(249,115,22,.1);color:var(--accent);}
+.ic-w{background:rgba(245,158,11,.1);color:var(--pri);}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin:18px 0;}
+
+table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:13.5px;}
+thead th{background:var(--dark);color:#fff;padding:10px 14px;text-align:left;font-weight:600;font-size:12.5px;}
+thead th:first-child{border-radius:8px 0 0 0;}thead th:last-child{border-radius:0 8px 0 0;}
+tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{background:#f8fafc;}
+
+.note{border-left:4px solid var(--accent);background:linear-gradient(135deg,#fffbeb,#fff);border-radius:0 10px 10px 0;padding:16px 20px;margin:16px 0;font-size:14px;color:#555;}
+.note strong{color:var(--dark);}
+.hbox{border:1px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff,#fff);border-radius:10px;padding:16px 20px;margin:16px 0;font-size:14px;}
+.hbox.green{background:linear-gradient(135deg,#ecfdf5,#fff);border-color:#a7f3d0;}
+.hbox.amber{background:linear-gradient(135deg,#fffbeb,#fff);border-color:#fde68a;}
+
+.cht{background:#fff;border-radius:12px;padding:22px;border:1px solid #e2e8f0;margin:18px 0;}
+.cht canvas{max-height:380px;}
+.cht-t{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;text-align:center;}
+
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;}
+.cmp-s{padding:22px;}.cmp-old{background:#f8fafc;}.cmp-new{background:linear-gradient(135deg,#fffbeb,#fff);}
+.cmp-lb{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding:3px 10px;border-radius:4px;display:inline-block;}
+.cmp-old .cmp-lb{background:#e2e8f0;color:#64748b;}.cmp-new .cmp-lb{background:#fde68a;color:#92400e;}
+
+.deep{border:2px solid var(--pri);border-radius:14px;padding:28px;margin:20px 0;background:linear-gradient(135deg,#fffbf0,#fff);}
+.deep .dt{font-size:18px;font-weight:800;color:var(--pri);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+
+.flow-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+.flow-s{background:linear-gradient(135deg,var(--dark),var(--gray));color:#fff;padding:8px 16px;border-radius:7px;font-size:12px;font-weight:600;}
+.flow-a{color:var(--pri);font-size:18px;font-weight:bold;}
+
+.bar-g{display:flex;align-items:center;gap:10px;margin:8px 0;}
+.bar-l{min-width:110px;text-align:right;font-size:12px;color:#64748b;flex-shrink:0;}
+.bar-w{flex:1;height:24px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+.bar-f{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:10px;color:#fff;font-weight:700;}
+
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.tag{padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:600;}
+.t-w{background:#fef3c7;color:#92400e;}.t-b{background:#dbeafe;color:#1d4ed8;}.t-g{background:#d1fae5;color:#065f46;}.t-p{background:#ede9fe;color:#6d28d9;}.t-o{background:#ffedd5;color:#c2410c;}
+
+.bdg{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;}
+.bdg-w{background:#fef3c7;color:#92400e;}.bdg-b{background:#dbeafe;color:#1d4ed8;}.bdg-g{background:#d1fae5;color:#065f46;}.bdg-p{background:#ede9fe;color:#6d28d9;}
+
+.footer{margin-left:240px;padding:20px 44px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;text-align:center;}
+@media(max-width:860px){.footer{margin-left:0;}}
+.stt{position:fixed;bottom:28px;right:28px;width:40px;height:40px;background:var(--pri);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:18px;box-shadow:0 4px 12px rgba(245,158,11,.3);display:none;z-index:1001;}
+</style>
+</head>
+<body>
+
+<!-- TOPNAV -->
+<header class="topnav">
+  <button class="toc-btn" onclick="document.querySelector('.toc').classList.toggle('open')">☰</button>
+  <div class="logo">
+    <div class="logo-icon">🦀</div>
+    <div class="logo-text"><em>PicoClaw</em> 기술 보고서</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="badge">📖 심층 기술 분석</div>
+  <div class="date">2026.04</div>
+</header>
+
+<!-- TOC -->
+<nav class="toc" id="toc">
+  <h4>목차</h4>
+  <a href="#s1">1. 요약</a>
+  <a href="#s2">2. PicoClaw란?</a>
+  <a href="#s2a" class="sub">└ 핵심 포지셔닝</a>
+  <a href="#s2b" class="sub">└ 프로젝트 배경</a>
+  <a href="#s3">3. 핵심 기술 아키텍처</a>
+  <a href="#s3a" class="sub">└ 시스템 아키텍처</a>
+  <a href="#s3b" class="sub">└ 기술 선택</a>
+  <a href="#s4">4. 6대 핵심 특성</a>
+  <a href="#s4a" class="sub">└ 극한의 경량화</a>
+  <a href="#s4b" class="sub">└ 멀티 채널</a>
+  <a href="#s4c" class="sub">└ MCP 프로토콜</a>
+  <a href="#s4d" class="sub">└ 스마트 라우팅</a>
+  <a href="#s4e" class="sub">└ Agent 기능</a>
+  <a href="#s4f" class="sub">└ 크로스 플랫폼</a>
+  <a href="#s5">5. 성능 벤치마크</a>
+  <a href="#s6">6. LLM 프로바이더 생태계</a>
+  <a href="#s7">7. 배포 시나리오</a>
+  <a href="#s8">8. 버전 히스토리</a>
+  <a href="#s9">9. 빠른 시작</a>
+  <a href="#s10">10. 결론 및 전망</a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="eyebrow">Sipeed · 오픈소스 프로젝트</div>
+  <h1>PicoClaw 심층 기술 분석</h1>
+  <h2>Go로 재작성된 초경량 AI 어시스턴트 — $10 하드웨어 · &lt;10MB 메모리 · ms 부팅</h2>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="val">27K+</div><div class="lbl">GitHub Stars</div></div>
+    <div class="hero-stat"><div class="val">&lt;10MB</div><div class="lbl">메모리 사용량</div></div>
+    <div class="hero-stat"><div class="val">&lt;1s</div><div class="lbl">부팅 시간</div></div>
+    <div class="hero-stat"><div class="val">30+</div><div class="lbl">LLM 프로바이더</div></div>
+    <div class="hero-stat"><div class="val">17+</div><div class="lbl">메시징 채널</div></div>
+  </div>
+</div>
+
+<!-- ====== 1. 요약 ====== -->
+<span class="anchor" id="s1"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">1</span>요약</h2>
+
+  <table>
+    <thead><tr><th>항목</th><th>요점</th></tr></thead>
+    <tbody>
+      <tr><td><strong>정의</strong></td><td>Sipeed가 주도하는 오픈소스 초경량 AI 어시스턴트. 순수 Go 구현, $10 하드웨어에서 실행 가능</td></tr>
+      <tr><td><strong>주목 이유</strong></td><td>AI Agent 최소 구동 비용을 수백 달러에서 10달러로 낮춰 엣지 컴퓨팅 + AI의 새로운 장을 열었음</td></tr>
+      <tr><td><strong>핵심 가치</strong></td><td>메모리 99% 절감, 부팅 속도 400배, 17+ 메시징 플랫폼 지원, MCP 네이티브 지원</td></tr>
+      <tr><td><strong>현재 상태</strong></td><td>v0.2.4 (2026.03), 27K Stars, 199명 기여자, 빠른 개발 진행 중</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>한 줄 요약:</strong> PicoClaw는 대형 언어 모델의 Agent 능력을 10MB 미만의 단일 바이너리에 담아, $10 RISC-V 보드부터 중고 안드로이드 폰까지 — 어떤 Linux 기기든 개인 AI 어시스턴트로 만들 수 있게 해줍니다.
+  </div>
+</div>
+
+<!-- ====== 2. PicoClaw란? ====== -->
+<span class="anchor" id="s2"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">2</span>PicoClaw란?</h2>
+
+  <span class="anchor" id="s2a"></span>
+  <h3>2.1 핵심 포지셔닝</h3>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-w">🪶</div>극한의 경량화</div>
+      <p>코어 메모리 사용량 &lt;10MB — 유사 솔루션(OpenClaw) 대비 99% 작음. 단일 바이너리, 의존성 제로.</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">💰</div>극소 비용</div>
+      <p>$10 하드웨어에서 구동 가능. Mac mini 대비 98% 저렴. AI Agent의 민주화와 탈중앙화 실현.</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">⚡</div>번개 같은 부팅</div>
+      <p>0.6GHz 싱글코어에서 1초 미만 부팅. TypeScript 솔루션 대비 400배 빠름.</p>
+    </div>
+  </div>
+
+  <div class="cmp">
+    <div class="cmp-s cmp-old">
+      <div class="cmp-lb">기존 AI Agent 프레임워크</div>
+      <p><strong>TypeScript/Python 구현</strong></p>
+      <ul>
+        <li>메모리 사용량 100MB–1GB+</li>
+        <li>부팅 시간 30–500초</li>
+        <li>$50–$599 하드웨어 필요</li>
+        <li>Node.js / Python 런타임 의존</li>
+        <li>크로스 플랫폼 배포 복잡</li>
+      </ul>
+    </div>
+    <div class="cmp-s cmp-new">
+      <div class="cmp-lb">PicoClaw (Go 구현)</div>
+      <p><strong>순수 Go 네이티브 구현</strong></p>
+      <ul>
+        <li>메모리 사용량 &lt;10MB (↓99%)</li>
+        <li>부팅 시간 &lt;1초 (↑400×)</li>
+        <li>$10 하드웨어면 충분 (↓98%)</li>
+        <li>단일 정적 바이너리, 의존성 제로</li>
+        <li>하나의 빌드로 RISC-V/ARM/x86 커버</li>
+      </ul>
+    </div>
+  </div>
+
+  <span class="anchor" id="s2b"></span>
+  <h3>2.2 프로젝트 배경</h3>
+  <p><strong>Sipeed(矽速科技)</strong>는 세계적으로 유명한 RISC-V 하드웨어 제조사로, LicheeRV Nano, MaixCAM 등 초저가 개발 보드를 생산합니다. PicoClaw는 하나의 단순한 질문에서 탄생했습니다: <strong>"우리의 $10 하드웨어가 Linux를 구동할 수 있다면, AI Agent도 구동할 수 있지 않을까?"</strong></p>
+
+  <p>PicoClaw는 NanoBot 프로젝트에서 영감을 받았지만 포크가 아닌 — Go 언어로 처음부터 완전히 재작성한 프로젝트입니다. 특히 주목할 점은 <strong>핵심 코드의 95%가 AI Agent 자체에 의해 생성</strong>되었으며, 인간 엔지니어는 주로 아키텍처 설계와 코드 리뷰를 담당했다는 것입니다.</p>
+
+  <div class="note">
+    <strong>비유:</strong> ChatGPT가 데이터센터에서 운행되는 "대형 트럭"이라면, PicoClaw는 주머니에 넣을 수 있는 "전동 킥보드" 같은 것입니다 — 화물을 실을 순 없지만, 도시 구석구석을 자유롭게 누빌 수 있습니다.
+  </div>
+</div>
+
+<!-- ====== 3. 핵심 기술 아키텍처 ====== -->
+<span class="anchor" id="s3"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">3</span>핵심 기술 아키텍처</h2>
+
+  <span class="anchor" id="s3a"></span>
+  <h3>3.1 시스템 아키텍처</h3>
+
+  <div class="card">
+    <pre style="font-size:13px;line-height:1.6;overflow-x:auto;color:#334155;">
+┌─────────────────────────────────────────────────────────────────┐
+│                   PicoClaw 시스템 아키텍처 전체도                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌────────────────┐                                             │
+│  │  메시징 채널 레이어│  Telegram · Discord · Slack · WeChat · 카카오│
+│  │  (17+ 플랫폼)   │  DingTalk · LINE · QQ · WeCom · Matrix     │
+│  └───────┬────────┘                                             │
+│          │                                                      │
+│          ▼                                                      │
+│  ┌────────────────┐                                             │
+│  │  게이트웨이 레이어│  통합 HTTP/WebSocket 접속                    │
+│  │  (Gateway)     │  접근 제어 · 로그 관리 · 메시지 라우팅          │
+│  └───────┬────────┘                                             │
+│          │                                                      │
+│          ▼                                                      │
+│  ┌────────────────┐   ┌──────────────┐   ┌──────────────┐      │
+│  │  Agent 코어     │──▶│  도구 시스템   │──▶│  MCP 서버     │      │
+│  │                │   │              │   │              │      │
+│  │  대화 관리      │   │  웹 검색      │   │  파일시스템    │      │
+│  │  컨텍스트 유지   │   │  코드 실행    │   │  데이터베이스   │      │
+│  │  스마트 라우팅   │   │  크론 작업    │   │  커스텀 확장   │      │
+│  │  메모리 시스템   │   │  스킬 시스템  │   │              │      │
+│  └───────┬────────┘   └──────────────┘   └──────────────┘      │
+│          │                                                      │
+│          ▼                                                      │
+│  ┌────────────────┐                                             │
+│  │  LLM 프로바이더  │  OpenAI · Anthropic · Google · DeepSeek     │
+│  │  (30+ 연동)    │  Qwen · Groq · Ollama · vLLM · ...         │
+│  └────────────────┘                                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘</pre>
+  </div>
+
+  <span class="anchor" id="s3b"></span>
+  <h3>3.2 기술 선택 분석</h3>
+
+  <table>
+    <thead><tr><th>기술 결정</th><th>선택</th><th>이유</th></tr></thead>
+    <tbody>
+      <tr><td><strong>프로그래밍 언어</strong></td><td>Go 1.25+</td><td>정적 컴파일, 크로스 아키텍처 빌드, 우수한 동시성 모델(goroutine), 런타임 의존성 없음</td></tr>
+      <tr><td><strong>바이너리 배포</strong></td><td>단일 실행 파일</td><td>사용자가 어떤 의존성도 설치할 필요 없음. 다운로드 즉시 사용 가능</td></tr>
+      <tr><td><strong>설정 형식</strong></td><td>JSON (config.json)</td><td>구조화, 프로그래밍 파싱 용이, 환경변수 오버라이드 지원</td></tr>
+      <tr><td><strong>Web UI</strong></td><td>내장 Launcher</td><td>브라우저 기반 시각적 설정, 프론트엔드 의존성 없음</td></tr>
+      <tr><td><strong>메시지 프로토콜</strong></td><td>통합 Gateway</td><td>모든 채널이 동일한 게이트웨이 포트(18790) 공유, 배포 단순화</td></tr>
+      <tr><td><strong>메모리 저장</strong></td><td>JSONL + Markdown</td><td>극히 낮은 오버헤드의 영구 저장 방식, 데이터베이스 불필요</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hbox amber">
+    <strong>왜 Rust가 아닌 Go인가?</strong><br>
+    Go는 Rust보다 컴파일 속도가 훨씬 빠르고, 크로스 컴파일이 더 간편하며(GOOS/GOARCH 한 줄로 해결), goroutine은 멀티 채널 메시지 동시 처리에 최적화되어 있습니다. PicoClaw 같은 I/O 집약적 애플리케이션에서는 Go의 성능이 충분하며, 개발 효율성 향상이 결정적이었습니다.
+  </div>
+</div>
+
+<!-- ====== 4. 6대 핵심 특성 ====== -->
+<span class="anchor" id="s4"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">4</span>6대 핵심 특성</h2>
+
+  <div class="cht">
+    <div class="cht-t">PicoClaw 핵심 역량 레이더 차트</div>
+    <canvas id="cRadar"></canvas>
+  </div>
+
+  <!-- 4A -->
+  <span class="anchor" id="s4a"></span>
+  <div class="deep">
+    <div class="dt">🪶 특성 1: 극한의 경량화</div>
+
+    <p>PicoClaw의 핵심 설계 원칙은 "<strong>절약할 수 있는 모든 것을 절약한다</strong>"입니다. Go 언어의 정적 컴파일과 세밀한 메모리 관리를 통해 전체 AI Agent 프레임워크를 10MB 미만의 런타임 메모리 사용량으로 압축했습니다.</p>
+
+    <h3>리소스 비교</h3>
+    <div class="bar-g">
+      <div class="bar-l">OpenClaw (TS)</div>
+      <div class="bar-w"><div class="bar-f" style="width:100%;background:var(--red);">&gt;1GB</div></div>
+    </div>
+    <div class="bar-g">
+      <div class="bar-l">NanoBot (Python)</div>
+      <div class="bar-w"><div class="bar-f" style="width:10%;background:var(--accent);">&gt;100MB</div></div>
+    </div>
+    <div class="bar-g">
+      <div class="bar-l">PicoClaw (Go)</div>
+      <div class="bar-w"><div class="bar-f" style="width:1%;background:var(--green);">&lt;10MB</div></div>
+    </div>
+
+    <table>
+      <thead><tr><th>지표</th><th>OpenClaw (TypeScript)</th><th>NanoBot (Python)</th><th>PicoClaw (Go)</th></tr></thead>
+      <tbody>
+        <tr><td>메모리 사용량</td><td>&gt;1GB</td><td>&gt;100MB</td><td><strong>&lt;10MB</strong></td></tr>
+        <tr><td>부팅 시간 (0.8GHz)</td><td>&gt;500초</td><td>&gt;30초</td><td><strong>&lt;1초</strong></td></tr>
+        <tr><td>최소 하드웨어 비용</td><td>$599 (Mac mini)</td><td>~$50</td><td><strong>$10</strong></td></tr>
+        <tr><td>런타임 의존성</td><td>Node.js</td><td>Python + pip</td><td><strong>없음</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4B -->
+  <span class="anchor" id="s4b"></span>
+  <div class="deep">
+    <div class="dt">💬 특성 2: 멀티 채널 연동 (17+ 플랫폼)</div>
+
+    <p>PicoClaw는 통합 Gateway 아키텍처를 통해 하나의 설정으로 여러 메시징 플랫폼에 동시 연결됩니다.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><div class="ic ic-b">🌍</div>글로벌 플랫폼</div>
+        <ul>
+          <li>Telegram — 롱 폴링, 음성 전사 지원</li>
+          <li>Discord — WebSocket + Bot Token</li>
+          <li>Slack — Socket Mode, 공인 IP 불필요</li>
+          <li>WhatsApp — 네이티브 또는 브리지 모드</li>
+          <li>Matrix — 분산형 프로토콜</li>
+          <li>LINE — Webhook 연동</li>
+          <li>IRC — 클래식 IRC 프로토콜</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-r">🇨🇳</div>중국 플랫폼</div>
+        <ul>
+          <li>WeChat — iLink API 네이티브 QR 스캔</li>
+          <li>QQ — 공식 Bot API (WebSocket)</li>
+          <li>DingTalk — Stream 모드</li>
+          <li>Feishu / Lark — WebSocket/SDK</li>
+          <li>WeCom — WebSocket, QR 로그인 지원</li>
+          <li>OneBot — NapCat/Go-CQHTTP 호환</li>
+          <li>MaixCam — 하드웨어 카메라 연동</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4C -->
+  <span class="anchor" id="s4c"></span>
+  <div class="deep">
+    <div class="dt">🔗 특성 3: MCP 프로토콜 네이티브 지원</div>
+
+    <p><strong>MCP (Model Context Protocol)</strong>는 Anthropic이 제안한 개방형 표준으로 — AI 세계의 "USB-C 포트"로 이해할 수 있습니다. PicoClaw는 MCP를 네이티브로 지원하여 모든 MCP 서버에 연결해 Agent 기능을 확장할 수 있습니다.</p>
+
+    <div class="flow-h">
+      <div class="flow-s">PicoClaw Agent</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">MCP 프로토콜</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">파일시스템 / DB / API / 커스텀 도구</div>
+    </div>
+
+    <p><strong>stdio</strong>, <strong>SSE</strong>, <strong>HTTP</strong> 세 가지 전송 방식과 자동 도구 발견(Tool Discovery)을 지원합니다.</p>
+  </div>
+
+  <!-- 4D -->
+  <span class="anchor" id="s4d"></span>
+  <div class="deep">
+    <div class="dt">🧠 특성 4: 스마트 모델 라우팅</div>
+
+    <p>PicoClaw는 규칙 기반 모델 라우팅을 지원합니다 — 간단한 질문은 경량 모델로, 복잡한 질문은 고급 모델로 자동 전달하여 <strong>API 비용을 절약</strong>합니다.</p>
+
+    <div class="card">
+      <pre style="font-size:13px;line-height:1.6;overflow-x:auto;color:#334155;">
+"오늘 날씨 어때?"
+  → 라우팅 규칙: 간단한 질의
+  → 전송: Haiku / DeepSeek-V3 (저비용 모델)
+  → 비용: ≈ $0.0001
+
+"이 코드의 성능 병목점을 분석해줘"
+  → 라우팅 규칙: 복잡한 추론
+  → 전송: Claude Opus 4.6 / GPT-5.4 (고급 모델)
+  → 비용: ≈ $0.05</pre>
+    </div>
+  </div>
+
+  <!-- 4E -->
+  <span class="anchor" id="s4e"></span>
+  <div class="deep">
+    <div class="dt">🤖 특성 5: 완전한 Agent 기능</div>
+
+    <p>PicoClaw는 단순한 채팅 포워더가 아닙니다. v0.2.1부터 완전한 AI Agent 능력을 갖추고 있습니다:</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><div class="ic ic-b">🔍</div>웹 검색</div>
+        <p>DuckDuckGo(무료), Brave, Tavily, Baidu 등 7가지 검색 엔진 지원.</p>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-g">💻</div>코드 실행</div>
+        <p>샌드박스 환경에서 코드 실행. 보안 정책 설정 가능.</p>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-p">⏰</div>크론 작업</div>
+        <p>내장 Cron 스케줄러. 일회성 리마인더, 주기적 작업, Cron 표현식 지원.</p>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-w">🎯</div>스킬 시스템</div>
+        <p>SKILL.md 파일로 모듈식 기능 로드. ClawHub에서 커뮤니티 스킬 설치 가능.</p>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-o">👁️</div>비전 파이프라인</div>
+        <p>이미지와 파일을 Agent에 직접 전송. 자동 base64 인코딩 후 멀티모달 LLM 분석.</p>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-r">🧬</div>서브 Agent 오케스트레이션</div>
+        <p>v0.2.4 신규 SubTurn 아키텍처. 서브 Agent 동시성 제어 및 수명주기 관리.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4F -->
+  <span class="anchor" id="s4f"></span>
+  <div class="deep">
+    <div class="dt">🌍 특성 6: 진정한 크로스 플랫폼</div>
+
+    <p>Go의 크로스 컴파일 능력 덕분에, PicoClaw는 하나의 릴리스로 모든 주요 아키텍처를 커버합니다:</p>
+
+    <table>
+      <thead><tr><th>아키텍처</th><th>대표 디바이스</th><th>최소 비용</th><th>주요 용도</th></tr></thead>
+      <tbody>
+        <tr><td><strong>RISC-V</strong></td><td>LicheeRV-Nano</td><td>$9.9</td><td>최저가 홈 어시스턴트</td></tr>
+        <tr><td><strong>ARM64</strong></td><td>Raspberry Pi 4/5</td><td>~$35</td><td>개인 서버 / 홈 게이트웨이</td></tr>
+        <tr><td><strong>ARM32</strong></td><td>Raspberry Pi Zero 2 W</td><td>~$15</td><td>포터블 IoT 노드</td></tr>
+        <tr><td><strong>x86_64</strong></td><td>모든 PC / 서버</td><td>—</td><td>기업 배포</td></tr>
+        <tr><td><strong>MIPS</strong></td><td>라우터 / 임베디드</td><td>—</td><td>네트워크 장치 통합</td></tr>
+        <tr><td><strong>Android</strong></td><td>모든 안드로이드 폰</td><td>중고폰 활용</td><td>모바일 AI 어시스턴트</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>2026.03 신규:</strong> PicoClaw가 이제 Android를 네이티브 지원합니다! APK를 다운로드하여 설치하면 됩니다. 서랍 속 오래된 폰에 새 생명을 불어넣으세요.
+    </div>
+  </div>
+</div>
+
+<!-- ====== 5. 성능 벤치마크 ====== -->
+<span class="anchor" id="s5"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">5</span>성능 벤치마크</h2>
+
+  <div class="cht">
+    <div class="cht-t">리소스 소비 비교 (로그 스케일)</div>
+    <canvas id="cResource"></canvas>
+  </div>
+
+  <div class="cht">
+    <div class="cht-t">부팅 시간 비교 (0.8GHz 싱글코어)</div>
+    <canvas id="cBoot"></canvas>
+  </div>
+
+  <div class="hbox green">
+    <strong>핵심 수치:</strong> 0.8GHz 싱글코어 프로세서에서 PicoClaw의 부팅 시간은 1초 미만인 반면, TypeScript 솔루션은 500초 이상이 필요합니다. 이는 엣지 디바이스에서 PicoClaw가 "전원 즉시 사용"이 가능함을 의미하며, 기존 솔루션은 부팅조차 완료하지 못할 수 있습니다.
+  </div>
+</div>
+
+<!-- ====== 6. LLM 프로바이더 생태계 ====== -->
+<span class="anchor" id="s6"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">6</span>LLM 프로바이더 생태계</h2>
+
+  <p>PicoClaw는 <code>model_list</code> 설정을 통해 30+ LLM 프로바이더를 통합 연동하며, <code>protocol/model</code> 형식으로 모델을 식별합니다.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">🌐</div>글로벌 프로바이더</div>
+      <table>
+        <thead><tr><th>프로바이더</th><th>프로토콜</th><th>대표 모델</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td>openai/</td><td>GPT-5.4, GPT-4o, o3</td></tr>
+          <tr><td>Anthropic</td><td>anthropic/</td><td>Claude Opus 4.6</td></tr>
+          <tr><td>Google</td><td>gemini/</td><td>Gemini 3 Flash</td></tr>
+          <tr><td>OpenRouter</td><td>openrouter/</td><td>200+ 모델 통합</td></tr>
+          <tr><td>Groq</td><td>groq/</td><td>고속 추론</td></tr>
+          <tr><td>AWS Bedrock</td><td>bedrock/</td><td>Claude on AWS</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-r">🇨🇳</div>중국 프로바이더</div>
+      <table>
+        <thead><tr><th>프로바이더</th><th>프로토콜</th><th>대표 모델</th></tr></thead>
+        <tbody>
+          <tr><td>DeepSeek</td><td>deepseek/</td><td>V3, R1</td></tr>
+          <tr><td>Qwen (통의천문)</td><td>qwen/</td><td>Qwen3, Qwen-Max</td></tr>
+          <tr><td>Zhipu AI</td><td>zhipu/</td><td>GLM-4.7, GLM-5</td></tr>
+          <tr><td>Volcengine</td><td>volcengine/</td><td>Doubao, Ark</td></tr>
+          <tr><td>Moonshot</td><td>moonshot/</td><td>Kimi</td></tr>
+          <tr><td>Xiaomi MiMo</td><td>mimo/</td><td>MiMo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><div class="ic ic-g">🏠</div>로컬 배포 방식</div>
+    <p>PicoClaw는 로컬에서 실행 중인 LLM에도 연결 가능하여 완전한 오프라인 사용이 가능합니다:</p>
+    <ul>
+      <li><strong>Ollama</strong> (ollama/) — 가장 인기 있는 로컬 모델 실행 솔루션</li>
+      <li><strong>vLLM</strong> (vllm/) — 고성능 추론 엔진, OpenAI API 호환</li>
+      <li><strong>LiteLLM</strong> (litellm/) — 프록시 레이어, 100+ 프로바이더 통합</li>
+    </ul>
+  </div>
+
+  <div class="cht">
+    <div class="cht-t">LLM 프로바이더 분포</div>
+    <canvas id="cProviders"></canvas>
+  </div>
+</div>
+
+<!-- ====== 7. 배포 시나리오 ====== -->
+<span class="anchor" id="s7"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">7</span>배포 시나리오</h2>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-w">🏠</div>시나리오 1: $10 홈 어시스턴트</div>
+      <p><strong>하드웨어:</strong> LicheeRV-Nano ($9.9)</p>
+      <p><strong>활용:</strong> Telegram/카카오톡 연동, 24시간 온라인 개인 AI 어시스턴트. 리마인더, 날씨 조회, 일정 관리. 소비 전력 1W 미만.</p>
+      <div class="tags"><span class="tag t-g">저비용</span><span class="tag t-b">RISC-V</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">🖥️</div>시나리오 2: 개발자 워크스테이션</div>
+      <p><strong>하드웨어:</strong> 모든 PC / 노트북</p>
+      <p><strong>활용:</strong> WebUI 또는 TUI로 관리. Claude/GPT 연결하여 코드 리뷰, 문서 작성, 디버깅. MCP로 로컬 도구 체인 연동.</p>
+      <div class="tags"><span class="tag t-p">개발 효율</span><span class="tag t-w">MCP</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">📱</div>시나리오 3: 중고 폰 부활 프로젝트</div>
+      <p><strong>하드웨어:</strong> 모든 안드로이드 폰</p>
+      <p><strong>활용:</strong> 서랍 속 오래된 폰에 PicoClaw APK 설치, Wi-Fi 연결하면 AI 어시스턴트로 변신. Telegram으로 원격 접근 가능.</p>
+      <div class="tags"><span class="tag t-o">Android</span><span class="tag t-g">재활용</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-p">🔒</div>시나리오 4: 기업 프라이빗 배포</div>
+      <p><strong>하드웨어:</strong> 기업 서버</p>
+      <p><strong>활용:</strong> Ollama 로컬 LLM과 결합, 데이터가 사내 네트워크를 벗어나지 않음. Slack/Teams 연동으로 내부 지식 베이스 Q&A.</p>
+      <div class="tags"><span class="tag t-p">프라이빗</span><span class="tag t-b">보안 컴플라이언스</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-r">📷</div>시나리오 5: 스마트 감시</div>
+      <p><strong>하드웨어:</strong> MaixCAM / MaixCAM2 ($50-$100)</p>
+      <p><strong>활용:</strong> PicoClaw + AI 카메라로 인물 감지 시 자동 알림. 멀티모달 LLM으로 화면 분석 가능.</p>
+      <div class="tags"><span class="tag t-o">IoT</span><span class="tag t-w">비전 AI</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-o">🖧</div>시나리오 6: 서버 운영 자동화</div>
+      <p><strong>하드웨어:</strong> NanoKVM ($30-$100)</p>
+      <p><strong>활용:</strong> KVM 장치에서 실행, AI를 통한 서버 운영 자동화. 정기 점검, 이상 알림 지원.</p>
+      <div class="tags"><span class="tag t-b">운영</span><span class="tag t-g">자동화</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 8. 버전 히스토리 ====== -->
+<span class="anchor" id="s8"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">8</span>버전 히스토리</h2>
+
+  <table>
+    <thead><tr><th>버전</th><th>날짜</th><th>주요 업데이트</th><th>Stars</th></tr></thead>
+    <tbody>
+      <tr><td><span class="bdg bdg-g">v0.2.4</span></td><td>2026.03.25</td><td>Agent 아키텍처 대개편 (SubTurn/Hooks/Steering/EventBus), WeChat/WeCom 연동, 보안 강화, AWS Bedrock/Azure/Xiaomi MiMo 추가, 버그 35건 수정</td><td>26K</td></tr>
+      <tr><td><span class="bdg bdg-b">v0.2.3</span></td><td>2026.03.17</td><td>시스템 트레이 UI (Win/Linux), 서브 Agent 상태 조회, Gateway 핫 리로드, Cron 보안 게이트</td><td>25K</td></tr>
+      <tr><td><span class="bdg bdg-p">v0.2.1</span></td><td>2026.03.09</td><td>MCP 프로토콜 지원, 4개 신규 채널 (Matrix/IRC/WeCom/Discord Proxy), 3개 신규 프로바이더, 비전 파이프라인, JSONL 메모리, 모델 라우팅</td><td>—</td></tr>
+      <tr><td><span class="bdg bdg-w">v0.2.0</span></td><td>2026.02.28</td><td>Docker Compose 지원, Web UI Launcher</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cht">
+    <div class="cht-t">GitHub Stars 성장 추이</div>
+    <canvas id="cStars"></canvas>
+  </div>
+
+  <div class="note">
+    <strong>개발 속도:</strong> PicoClaw는 첫 릴리스부터 27K Stars까지 3개월도 걸리지 않았습니다. 주당 1-2개 버전을 릴리스하며, 커뮤니티 기여자 수는 199명에 달합니다.
+  </div>
+</div>
+
+<!-- ====== 9. 빠른 시작 ====== -->
+<span class="anchor" id="s9"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">9</span>빠른 시작</h2>
+
+  <h3>9.1 3단계로 시작하기</h3>
+  <div class="flow-h">
+    <div class="flow-s">① picoclaw onboard</div>
+    <div class="flow-a">→</div>
+    <div class="flow-s">② config.json 설정</div>
+    <div class="flow-a">→</div>
+    <div class="flow-s">③ picoclaw agent</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">🖥️</div>데스크톱 사용자 (WebUI 추천)</div>
+      <p>다운로드 후 <code>picoclaw-launcher</code>를 더블클릭하면 브라우저가 <code>http://localhost:18800</code>에서 자동 실행됩니다.</p>
+      <p>WebUI에서: 모델 추가 → 채널 설정 → Gateway 시작 → 채팅!</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">⌨️</div>서버 / SSH (TUI 추천)</div>
+      <p><code>picoclaw-launcher-tui</code>를 실행하여 터미널 메뉴에서 설정을 완료합니다.</p>
+      <p>헤드리스 환경에 적합: Raspberry Pi, 클라우드 서버, 임베디드 장치.</p>
+    </div>
+  </div>
+
+  <h3>9.2 설정 예시</h3>
+  <div class="card">
+    <pre style="font-size:13px;line-height:1.5;overflow-x:auto;color:#334155;">{
+  "version": 2,
+  "agents": {
+    "defaults": {
+      "model_name": "claude-opus-4.6",
+      "max_tokens": 32768,
+      "max_tool_iterations": 50
+    }
+  },
+  "model_list": [
+    {
+      "model_name": "claude-opus-4.6",
+      "model": "anthropic/claude-opus-4-6",
+      "api_key": "your-anthropic-key"
+    }
+  ],
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "token": "YOUR_BOT_TOKEN",
+      "allow_from": ["your-telegram-id"]
+    }
+  }
+}</pre>
+  </div>
+
+  <h3>9.3 설치 방법</h3>
+  <table>
+    <thead><tr><th>방법</th><th>명령어 / 동작</th><th>적용 시나리오</th></tr></thead>
+    <tbody>
+      <tr><td>공식 사이트 원클릭</td><td>picoclaw.io 방문, 플랫폼 자동 감지</td><td>가장 간단, 모든 사용자</td></tr>
+      <tr><td>GitHub Releases</td><td>아키텍처별 바이너리 수동 다운로드</td><td>특정 아키텍처 / 오프라인</td></tr>
+      <tr><td>Docker</td><td><code>docker compose up</code></td><td>컨테이너 배포</td></tr>
+      <tr><td>소스 빌드</td><td><code>git clone → make build</code></td><td>개발자 / 코드 기여</td></tr>
+      <tr><td>Android APK</td><td>picoclaw.io/download에서 다운로드</td><td>모바일 배포</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ====== 10. 결론 및 전망 ====== -->
+<span class="anchor" id="s10"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">10</span>결론 및 전망</h2>
+
+  <div class="grid3">
+    <div class="card" style="border-top:3px solid var(--green);">
+      <div class="card-h"><div class="ic ic-g">✅</div>핵심 강점</div>
+      <ul>
+        <li>극한의 경량화: &lt;10MB 메모리</li>
+        <li>극소 진입 장벽: $10으로 구동</li>
+        <li>전 플랫폼 커버: RISC-V ~ x86</li>
+        <li>17+ 메시징 플랫폼 지원</li>
+        <li>MCP 네이티브 지원</li>
+        <li>30+ LLM 프로바이더</li>
+        <li>활발한 오픈소스 커뮤니티</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid var(--pri);">
+      <div class="card-h"><div class="ic ic-w">⚠️</div>현재 한계</div>
+      <ul>
+        <li>아직 v1.0 정식 버전 미출시</li>
+        <li>빠른 개발 중, API 변경 가능</li>
+        <li>최근 PR 병합 후 메모리 10-20MB</li>
+        <li>보안 강화 진행 중</li>
+        <li>문서 보완 필요</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid var(--blue);">
+      <div class="card-h"><div class="ic ic-b">🔮</div>향후 전망</div>
+      <ul>
+        <li>v1.0 정식 버전 출시</li>
+        <li>리소스 최적화 &lt;10MB 복귀</li>
+        <li>더 많은 하드웨어 플랫폼 지원</li>
+        <li>ClawHub 스킬 생태계 확대</li>
+        <li>기업급 보안 강화</li>
+        <li>Agent 소셜 네트워크 (ClawdChat)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hbox amber" style="margin-top:24px;">
+    <strong>한 줄 평가:</strong> PicoClaw는 대단한 일을 하고 있습니다 — <strong>AI Agent의 구동 문턱을 "데이터센터"에서 "주머니 속"으로 낮추는 것</strong>입니다. 아직 초기 급성장 단계이지만, 극한의 경량화 기술 노선과 활발한 커뮤니티 생태계는 이 프로젝트를 엣지 AI 분야에서 가장 주목할 만한 오픈소스 프로젝트 중 하나로 만들고 있습니다.
+  </div>
+</div>
+
+</main>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>본 보고서는 PicoClaw 공개 문서 및 GitHub 저장소 정보를 기반으로 작성되었으며, 기술 참고용입니다.</p>
+  <p>데이터 출처: <a href="https://github.com/sipeed/picoclaw" style="color:var(--pri);">github.com/sipeed/picoclaw</a> · <a href="https://docs.picoclaw.io" style="color:var(--pri);">docs.picoclaw.io</a> · 갱신일: 2026년 4월</p>
+</div>
+
+<button class="stt" id="stt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+window.addEventListener('scroll',()=>{document.getElementById('stt').style.display=window.scrollY>400?'block':'none';});
+const tocLinks=document.querySelectorAll('.toc a');
+const anchors=document.querySelectorAll('.anchor');
+window.addEventListener('scroll',()=>{let c='';anchors.forEach(a=>{if(window.scrollY>=a.offsetTop-100)c=a.id;});tocLinks.forEach(a=>{a.classList.remove('on');if(a.getAttribute('href')==='#'+c)a.classList.add('on');});});
+tocLinks.forEach(a=>a.addEventListener('click',()=>{if(window.innerWidth<=860)document.querySelector('.toc').classList.remove('open');}));
+
+const W='#f59e0b',R='#ef4444',B='#3b82f6',G='#10b981',P='#8b5cf6',O='#f97316';
+
+new Chart(document.getElementById('cRadar'),{
+  type:'radar',
+  data:{
+    labels:['경량화','부팅 속도','크로스 플랫폼','멀티 채널','LLM 생태계','Agent 능력','MCP 지원','보안'],
+    datasets:[{
+      label:'PicoClaw',data:[98,95,92,90,88,80,85,70],
+      borderColor:W,backgroundColor:'rgba(245,158,11,.15)',pointBackgroundColor:W
+    },{
+      label:'기존 솔루션 (TypeScript)',data:[20,10,50,60,85,75,60,65],
+      borderColor:'#94a3b8',backgroundColor:'rgba(148,163,184,.1)',pointBackgroundColor:'#94a3b8'
+    }]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:16}}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20}}}}
+});
+
+new Chart(document.getElementById('cResource'),{
+  type:'bar',
+  data:{
+    labels:['메모리 사용량 (MB)','최소 하드웨어 비용 ($)'],
+    datasets:[
+      {label:'OpenClaw (TS)',data:[1000,599],backgroundColor:R},
+      {label:'NanoBot (Python)',data:[100,50],backgroundColor:O},
+      {label:'PicoClaw (Go)',data:[10,10],backgroundColor:G}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true}}},scales:{y:{type:'logarithmic',title:{display:true,text:'값 (로그 스케일)'}}}}
+});
+
+new Chart(document.getElementById('cBoot'),{
+  type:'bar',
+  data:{
+    labels:['OpenClaw (TypeScript)','NanoBot (Python)','PicoClaw (Go)'],
+    datasets:[{label:'부팅 시간 (초)',data:[500,30,0.8],backgroundColor:[R,O,G],borderRadius:6}]
+  },
+  options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'초'}}}}
+});
+
+new Chart(document.getElementById('cProviders'),{
+  type:'doughnut',
+  data:{
+    labels:['글로벌 클라우드','중국 클라우드','로컬 배포','기타'],
+    datasets:[{data:[12,8,3,7],backgroundColor:[B,R,G,P]}]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}}}}
+});
+
+new Chart(document.getElementById('cStars'),{
+  type:'line',
+  data:{
+    labels:['2026.01','2026.02','v0.2.0','v0.2.1','v0.2.3','v0.2.4','2026.04'],
+    datasets:[{
+      label:'GitHub Stars',data:[0,1000,5000,12000,25000,26000,27000],
+      borderColor:W,backgroundColor:'rgba(245,158,11,.1)',fill:true,tension:.3,pointBackgroundColor:W,pointRadius:5
+    }]
+  },
+  options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'Stars'},beginAtZero:true}}}
+});
+</script>
+
+</body>
+</html>

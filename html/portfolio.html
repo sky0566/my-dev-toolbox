@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linn Han — UI Designer Portfolio</title>
+    <style>
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+            background: #faf9f6; color: #1a1a1a; line-height: 1.6; overflow-x: hidden;
+        }
+        a { color: inherit; text-decoration: none; }
+        img { max-width: 100%; display: block; }
+
+        /* ─── Header / Nav ─── */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 48px;
+            background: rgba(250, 249, 246, 0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06); transition: box-shadow 0.3s;
+        }
+        .nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.06); }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em;
+        }
+        .nav-logo svg { width: 32px; height: 32px; }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-links a {
+            font-size: 0.9rem; font-weight: 500; color: #555;
+            position: relative; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #1a1a1a; }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -4px; left: 0;
+            width: 0; height: 2px; background: #1a1a1a; transition: width 0.25s;
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* ─── Hero ─── */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center;
+            padding: 120px 48px 80px; max-width: 1200px; margin: 0 auto;
+        }
+        .hero-content { max-width: 720px; }
+        .hero-greeting {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 1.1rem; color: #888; margin-bottom: 16px;
+        }
+        .hero-greeting .wave { display: inline-block; animation: wave 2.5s infinite; transform-origin: 70% 70%; }
+        @keyframes wave {
+            0%, 60%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(14deg); }
+            20% { transform: rotate(-8deg); }
+            40% { transform: rotate(-4deg); }
+            50% { transform: rotate(10deg); }
+        }
+        .hero h1 {
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            font-weight: 800; line-height: 1.15;
+            letter-spacing: -0.03em; margin-bottom: 24px;
+        }
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hero-desc { font-size: 1.15rem; color: #555; max-width: 560px; margin-bottom: 36px; line-height: 1.7; }
+        .hero-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+        .hero-tags .tag { padding: 6px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; background: #f0eef8; color: #6366f1; }
+        .hero-tags .tag.alt { background: #e8f5e9; color: #2e7d32; }
+        .hero-tags .tag.alt2 { background: #fff3e0; color: #e65100; }
+
+        /* ─── Section Common ─── */
+        .section { padding: 80px 48px; max-width: 1200px; margin: 0 auto; }
+        .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #6366f1; margin-bottom: 12px; }
+        .section-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 48px; }
+
+        /* ─── Work / Projects ─── */
+        .work-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        .work-card {
+            background: #fff; border-radius: 16px; overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.35s;
+            cursor: pointer; display: block;
+        }
+        .work-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(0,0,0,0.1); }
+        .work-card-body { padding: 28px; }
+        .work-card-body h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 10px; }
+        .work-card-body p { font-size: 0.92rem; color: #666; margin-bottom: 16px; line-height: 1.6; }
+        .work-card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .work-card-tags span { padding: 4px 12px; border-radius: 14px; font-size: 0.75rem; font-weight: 600; background: #f5f3ff; color: #6366f1; }
+        .work-card-link { font-size: 0.88rem; font-weight: 600; color: #6366f1; display: inline-flex; align-items: center; gap: 6px; }
+        .work-card-link:hover { text-decoration: underline; }
+
+        /* ─── Card Image Mockups ─── */
+        .card-img-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-img-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .card-img-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .card-img-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .card-img-overlay {
+            width: 100%; height: 280px; position: relative;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .card-img-overlay .mockup {
+            width: 70%; height: 70%; border-radius: 12px;
+            background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            display: flex; flex-direction: column; padding: 16px;
+        }
+        .mockup-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+        .mockup-bar span { width: 10px; height: 10px; border-radius: 50%; }
+        .mockup-bar span:nth-child(1) { background: #ff5f57; }
+        .mockup-bar span:nth-child(2) { background: #ffbd2e; }
+        .mockup-bar span:nth-child(3) { background: #28c840; }
+        .mockup-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .mockup-lines .line { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.3); }
+        .mockup-lines .line:nth-child(1) { width: 65%; }
+        .mockup-lines .line:nth-child(2) { width: 85%; }
+        .mockup-lines .line:nth-child(3) { width: 45%; }
+        .mockup-lines .line:nth-child(4) { width: 72%; }
+
+        .card-img-overlay .phone-mockup {
+            width: 140px; height: 180px; border-radius: 20px;
+            background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
+            border: 2px solid rgba(255,255,255,0.3);
+            display: flex; flex-direction: column; padding: 12px 10px; position: relative;
+        }
+        .phone-mockup::before {
+            content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.3);
+        }
+        .phone-mockup .mockup-lines { margin-top: 10px; }
+
+        .card-img-overlay .dash-mockup {
+            width: 75%; height: 72%; border-radius: 12px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            display: grid; grid-template-columns: 50px 1fr; overflow: hidden;
+        }
+        .dash-sidebar {
+            background: rgba(255,255,255,0.1);
+            display: flex; flex-direction: column; gap: 10px; padding: 12px 8px;
+            border-right: 1px solid rgba(255,255,255,0.15);
+        }
+        .dash-sidebar span { width: 100%; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.25); }
+        .dash-main { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .dash-main .chart-row { display: flex; gap: 8px; flex: 1; }
+        .dash-main .chart-box { flex: 1; border-radius: 8px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); }
+
+        .card-img-overlay .ds-mockup {
+            width: 72%; height: 70%; border-radius: 12px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 14px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .ds-row { display: flex; gap: 8px; align-items: center; }
+        .ds-swatch { width: 24px; height: 24px; border-radius: 6px; }
+        .ds-swatch.s1 { background: rgba(255,255,255,0.5); }
+        .ds-swatch.s2 { background: rgba(255,255,255,0.35); }
+        .ds-swatch.s3 { background: rgba(255,255,255,0.2); }
+        .ds-btn-mock { padding: 4px 14px; border-radius: 6px; background: rgba(255,255,255,0.3); height: 22px; }
+
+        /* ─── About ─── */
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+        .about-text p { margin-bottom: 16px; color: #555; font-size: 1.02rem; }
+        .about-skills { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+        .about-skills .skill { padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; background: #f0eef8; color: #6366f1; transition: transform 0.2s; }
+        .about-skills .skill:hover { transform: scale(1.05); }
+        .about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .stat-card { background: #fff; border-radius: 14px; padding: 28px; border: 1px solid rgba(0,0,0,0.06); text-align: center; }
+        .stat-card .number { font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .stat-card .label { font-size: 0.85rem; color: #888; margin-top: 4px; }
+
+        /* ─── Experience ─── */
+        .exp-list { display: flex; flex-direction: column; gap: 24px; }
+        .exp-item {
+            display: grid; grid-template-columns: 180px 1fr; gap: 32px;
+            padding: 28px; background: #fff; border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.06); transition: box-shadow 0.3s;
+        }
+        .exp-item:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+        .exp-date { font-size: 0.88rem; color: #888; font-weight: 600; padding-top: 4px; }
+        .exp-details h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+        .exp-details .company { font-size: 0.92rem; color: #6366f1; font-weight: 600; margin-bottom: 8px; }
+        .exp-details p { font-size: 0.9rem; color: #666; }
+
+        /* ─── Footer / CTA ─── */
+        .cta { padding: 100px 48px; text-align: center; background: linear-gradient(180deg, #faf9f6 0%, #f0eef8 100%); }
+        .cta h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+        .cta p { font-size: 1.05rem; color: #666; margin-bottom: 36px; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .cta-btn { padding: 14px 32px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s; }
+        .cta-btn:hover { transform: translateY(-2px); }
+        .cta-btn.primary { background: #1a1a1a; color: #fff; }
+        .cta-btn.primary:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .cta-btn.secondary { background: #fff; color: #1a1a1a; border: 1.5px solid rgba(0,0,0,0.12); }
+        .cta-btn.secondary:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+        .footer {
+            padding: 32px 48px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.82rem; color: #aaa; border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: #888; transition: color 0.2s; }
+        .footer-links a:hover { color: #6366f1; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .nav { padding: 16px 24px; }
+            .nav-links { gap: 20px; }
+            .hero { padding: 100px 24px 60px; }
+            .section { padding: 60px 24px; }
+            .work-grid { grid-template-columns: 1fr; }
+            .about-grid { grid-template-columns: 1fr; }
+            .exp-item { grid-template-columns: 1fr; gap: 8px; }
+            .cta { padding: 60px 24px; }
+            .footer { flex-direction: column; gap: 16px; text-align: center; }
+        }
+
+        /* ─── Fade-in animation ─── */
+        .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav" id="nav">
+    <a href="#" class="nav-logo">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="#6366f1"/>
+            <text x="5" y="23" fill="#fff" font-family="'Segoe UI',sans-serif" font-size="16" font-weight="800">LH</text>
+        </svg>
+        linn_han
+    </a>
+    <div class="nav-links">
+        <a href="#work">Work</a>
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#contact">Contact</a>
+    </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero" id="home">
+    <div class="hero-content fade-in">
+        <div class="hero-greeting">home <span class="wave">👋</span> Hi there! I am Linn Han</div>
+        <h1>I craft <span class="highlight">intuitive digital experiences</span> that people love</h1>
+        <p class="hero-desc">
+            A UI/UX designer with 6 years of experience turning complex requirements into clean, user-centered interfaces. I bridge the gap between user needs and business goals through research-driven design.
+        </p>
+        <div class="hero-tags">
+            <span class="tag">UI/UX Design</span>
+            <span class="tag alt">Design Systems</span>
+            <span class="tag alt2">Prototyping</span>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ SELECTED WORK ═══════════ -->
+<section class="section" id="work">
+    <div class="section-label fade-in">Portfolio</div>
+    <h2 class="section-title fade-in">Selected Work</h2>
+
+    <div class="work-grid">
+        <!-- Card 1: FreshCart -->
+        <a class="work-card fade-in" href="work/freshcart-ecommerce-redesign.html">
+            <div class="card-img-overlay card-img-1">
+                <div class="mockup">
+                    <div class="mockup-bar"><span></span><span></span><span></span></div>
+                    <div class="mockup-lines">
+                        <div class="line"></div><div class="line"></div>
+                        <div class="line"></div><div class="line"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="work-card-body">
+                <h3>FreshCart — E-Commerce Redesign</h3>
+                <p>End-to-end redesign of an online grocery platform's shopping experience, reducing cart abandonment by 34% and increasing conversion rate by 21%.</p>
+                <div class="work-card-tags"><span>UI Design</span><span>UX Research</span><span>Responsive Web</span></div>
+                <span class="work-card-link">View Case Study &rarr;</span>
+            </div>
+        </a>
+
+        <!-- Card 2: Medly Design System -->
+        <a class="work-card fade-in" href="work/medly-design-system.html">
+            <div class="card-img-overlay card-img-2">
+                <div class="ds-mockup">
+                    <div class="ds-row">
+                        <div class="ds-swatch s1"></div><div class="ds-swatch s2"></div><div class="ds-swatch s3"></div>
+                        <div class="ds-btn-mock"></div>
+                    </div>
+                    <div class="mockup-lines"><div class="line"></div><div class="line"></div></div>
+                    <div class="ds-row"><div class="ds-btn-mock"></div><div class="ds-btn-mock"></div></div>
+                    <div class="mockup-lines"><div class="line"></div></div>
+                </div>
+            </div>
+            <div class="work-card-body">
+                <h3>Medly — Design System</h3>
+                <p>Built a scalable design system from scratch for a healthcare SaaS platform, unifying 5 product lines under one consistent visual language with 120+ reusable components.</p>
+                <div class="work-card-tags"><span>Design System</span><span>Component Library</span><span>Figma</span></div>
+                <span class="work-card-link">View Case Study &rarr;</span>
+            </div>
+        </a>
+
+        <!-- Card 3: Zenith Mobile Banking -->
+        <a class="work-card fade-in" href="work/zenith-mobile-banking.html">
+            <div class="card-img-overlay card-img-3">
+                <div class="phone-mockup">
+                    <div class="mockup-lines">
+                        <div class="line"></div><div class="line"></div>
+                        <div class="line"></div><div class="line"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="work-card-body">
+                <h3>Zenith — Mobile Banking App</h3>
+                <p>Redesigned the mobile banking experience for a fintech startup, achieving a 4.8-star App Store rating and 40% increase in daily active users within 3 months of launch.</p>
+                <div class="work-card-tags"><span>Mobile UI</span><span>iOS &amp; Android</span><span>Fintech</span></div>
+                <span class="work-card-link">View Case Study &rarr;</span>
+            </div>
+        </a>
+
+        <!-- Card 4: Insightful Dashboard -->
+        <a class="work-card fade-in" href="work/insightful-dashboard.html">
+            <div class="card-img-overlay card-img-4">
+                <div class="dash-mockup">
+                    <div class="dash-sidebar"><span></span><span></span><span></span><span></span></div>
+                    <div class="dash-main">
+                        <div class="mockup-lines"><div class="line" style="width:50%;"></div></div>
+                        <div class="chart-row"><div class="chart-box"></div><div class="chart-box"></div></div>
+                        <div class="chart-row"><div class="chart-box"></div><div class="chart-box"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="work-card-body">
+                <h3>Insightful — Analytics Dashboard</h3>
+                <p>Designed a B2B SaaS analytics dashboard that simplified complex data visualization for non-technical users, improving task completion rate by 58%.</p>
+                <div class="work-card-tags"><span>Dashboard UI</span><span>Data Visualization</span><span>B2B SaaS</span></div>
+                <span class="work-card-link">View Case Study &rarr;</span>
+            </div>
+        </a>
+    </div>
+</section>
+
+<!-- ═══════════ ABOUT ═══════════ -->
+<section class="section" id="about">
+    <div class="section-label fade-in">About</div>
+    <h2 class="section-title fade-in">A bit about me</h2>
+    <div class="about-grid">
+        <div class="about-text fade-in">
+            <p>I'm a UI/UX designer who believes that great design is invisible — it just works. Over the past 6 years, I've worked with startups and enterprise teams across e-commerce, fintech, healthcare, and SaaS, delivering user-centered interfaces that balance aesthetics with usability.</p>
+            <p>My process is rooted in user research and rapid iteration. I love collaborating with product managers, engineers, and stakeholders to translate ambiguous problems into clear, elegant solutions. When I'm not pushing pixels, I'm exploring typography, sketching UI concepts, or tinkering with CSS animations.</p>
+            <div class="about-skills">
+                <span class="skill">Figma</span><span class="skill">Sketch</span><span class="skill">Adobe XD</span>
+                <span class="skill">Prototyping</span><span class="skill">Design Systems</span><span class="skill">User Research</span>
+                <span class="skill">Wireframing</span><span class="skill">Responsive Design</span><span class="skill">Interaction Design</span>
+            </div>
+        </div>
+        <div class="about-stats fade-in">
+            <div class="stat-card"><div class="number">6+</div><div class="label">Years Experience</div></div>
+            <div class="stat-card"><div class="number">30+</div><div class="label">Projects Shipped</div></div>
+            <div class="stat-card"><div class="number">120+</div><div class="label">Components Built</div></div>
+            <div class="stat-card"><div class="number">5</div><div class="label">Industries</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ EXPERIENCE ═══════════ -->
+<section class="section" id="experience">
+    <div class="section-label fade-in">Experience</div>
+    <h2 class="section-title fade-in">Where I've worked</h2>
+    <div class="exp-list">
+        <div class="exp-item fade-in">
+            <div class="exp-date">2022 — Present</div>
+            <div class="exp-details">
+                <h3>Senior UI Designer</h3>
+                <div class="company">Nexora Digital</div>
+                <p>Leading UI design for a B2B SaaS analytics platform. Established the company's first design system, mentored junior designers, and drove a 58% improvement in task completion rate across the product suite.</p>
+            </div>
+        </div>
+        <div class="exp-item fade-in">
+            <div class="exp-date">2020 — 2022</div>
+            <div class="exp-details">
+                <h3>UI/UX Designer</h3>
+                <div class="company">Medly Health</div>
+                <p>Designed and maintained a cross-platform design system for 5 healthcare SaaS products. Collaborated with engineering to build a Figma-to-code pipeline that reduced design-to-dev handoff time by 40%.</p>
+            </div>
+        </div>
+        <div class="exp-item fade-in">
+            <div class="exp-date">2019 — 2020</div>
+            <div class="exp-details">
+                <h3>UI Designer</h3>
+                <div class="company">Zenith Fintech</div>
+                <p>Redesigned the mobile banking app from ground up. Conducted user research, created high-fidelity prototypes, and collaborated closely with iOS and Android engineers through design handoff.</p>
+            </div>
+        </div>
+        <div class="exp-item fade-in">
+            <div class="exp-date">2017 — 2019</div>
+            <div class="exp-details">
+                <h3>Junior UI Designer</h3>
+                <div class="company">Carta Studio</div>
+                <p>Created responsive web interfaces for e-commerce and media clients. Developed wireframes, visual mockups, and interactive prototypes using Sketch and InVision.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ CTA / CONTACT ═══════════ -->
+<section class="cta" id="contact">
+    <h2 class="fade-in">Want to work together?</h2>
+    <p class="fade-in">If you like what you see and want to work together, get in touch!</p>
+    <div class="cta-buttons fade-in">
+        <a class="cta-btn primary" href="mailto:linn_han@gmail.com?subject=You've got mail!">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,7 12,13 2,7"/></svg>
+            linn_han@gmail.com
+        </a>
+        <a class="cta-btn secondary" href="https://www.linkedin.com/in/linn-han/" target="_blank">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>
+            LINKEDIN
+        </a>
+        <a class="cta-btn secondary" href="mailto:linn_han@outlook.com">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            MAILBOX
+        </a>
+    </div>
+</section>
+
+<footer class="footer">
+    <span>&copy; 2025 linn_han. All rights reserved.</span>
+    <div class="footer-links">
+        <a href="https://github.com/sky0566" target="_blank">GitHub</a>
+        <a href="https://www.linkedin.com/in/linn-han/" target="_blank">LinkedIn</a>
+        <a href="mailto:linn_han@gmail.com">Email</a>
+    </div>
+</footer>
+
+<script>
+    window.addEventListener('scroll', () => {
+        document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 20);
+    });
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

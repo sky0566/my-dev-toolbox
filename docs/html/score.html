@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Scoring Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 0;
+        }
+        .right-panel {
+            width: 450px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+        .header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        h1 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #fff0f8 100%);
+            border-radius: 8px;
+            border: 2px solid #e0e7ff;
+        }
+        .mode-label {
+            font-weight: 700;
+            color: #333;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .mode-option {
+            padding: 8px 16px;
+            background: white;
+            color: #2d3748;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .mode-option:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+        .mode-option.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 200px;
+        }
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #models {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 20px;
+        }
+        .model-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border: 1px solid rgba(255,255,255,0.8);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+        }
+        .model-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+        }
+        .model-box.highlight {
+            animation: highlightPulse 0.8s ease-out;
+        }
+        @keyframes highlightPulse {
+            0% { background: #fff3cd; box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.4); }
+            100% { background: white; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        }
+        .collapse-btn {
+            padding: 4px 10px;
+            background: #e2e8f0;
+            color: #555;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .collapse-btn:hover {
+            background: #cbd5e0;
+            transform: none;
+            box-shadow: none;
+        }
+        .score-summary {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #555;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .score-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .score-summary-label {
+            color: #888;
+        }
+        .score-summary-value {
+            font-weight: 700;
+            color: #667eea;
+        }
+        .score-summary-value.incomplete {
+            color: #999;
+            font-weight: 500;
+        }
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .model-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+        .progress {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+        .score-section {
+            margin-bottom: 15px;
+            padding: 14px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #fef8ff 100%);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+        .score-section:last-child {
+            margin-bottom: 0;
+            border-left-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #f8fff4 100%);
+            box-shadow: 0 2px 8px rgba(72, 187, 120, 0.1);
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .criterion {
+            margin-bottom: 10px;
+        }
+        .criterion:last-child {
+            margin-bottom: 0;
+        }
+        .criterion-name {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        .score-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .score-input {
+            width: 70px;
+            padding: 6px 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .score-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        .score-input.has-value {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f4ff 0%, #fef8ff 100%);
+        }
+        .score-display {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 700;
+        }
+        .results {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .results h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: 700;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .result-item {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #fef8ff 100%);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+            transition: all 0.2s ease;
+        }
+        .result-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        .result-name {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        .result-scores {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .score-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .rank-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+        }
+        .rank-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .rank-list {
+            list-style: none;
+            padding: 0;
+        }
+        .rank-item {
+            padding: 8px 0;
+            font-size: 14px;
+            color: #555;
+            font-family: 'Courier New', monospace;
+        }
+        .import-btn-inline {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .import-btn-inline:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .modal-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-btn-cancel {
+            padding: 10px 20px;
+            background: #e2e8f0;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .import-section {
+            margin-top: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%);
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
+        }
+        .import-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .import-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+        .import-btn {
+            width: 100%;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .import-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+            .right-panel {
+                width: 100%;
+                position: static;
+            }
+        }
+        @media (max-width: 900px) {
+            #models {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="header">
+                <h1>Model Scoring Tool</h1>
+                <div class="mode-selector">
+                    <span class="mode-label">Mode:</span>
+                    <button class="mode-option active" onclick="switchMode('API')">API</button>
+                    <button class="mode-option" onclick="switchMode('UI')">UI</button>
+                </div>
+                <div class="controls">
+                    <input type="text" id="modelName" placeholder="Enter model name..." />
+                    <button onclick="addModel()">Add Model</button>
+                </div>
+                <div style="font-size: 13px; color: #666; font-style: italic; margin-top: 8px;">
+                    Example: Claude-Opus-4, GPT-5, Gemini-2-Pro (comma separated for batch)
+                </div>
+            </div>
+            <div id="models"></div>
+        </div>
+        <div class="right-panel">
+            <div class="results" style="margin-bottom: 20px;">
+                <h2>Timestamp Converter</h2>
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="timestampInput" placeholder="Enter timestamps..." style="width: 100%; margin-bottom: 10px;" />
+                    <button onclick="convertTimestamp()" style="width: 100%; margin-bottom: 8px;">Convert</button>
+                    <div style="font-size: 15px; color: #666; font-style: italic;">
+                        Example:<br>"creationDate": 1766994832145, "lastMessageDate": 1766995289339
+                    </div>
+                </div>
+                <div id="convertedOutput" style="padding: 12px; background: #f8f9fa; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 13px; color: #333; min-height: 50px; word-break: break-all;"></div>
+            </div>
+            
+            <div class="results" style="margin-bottom: 20px;">
+                <h2>Clone Script Builder</h2>
+                <div style="margin-bottom: 12px; font-size: 14px; color: #555;">
+                    Enter model list (batch) and/or single model name, plus a Git repo URL.
+                </div>
+                <input type="text" id="singleModel" placeholder="Single model: Claude-sonnet-4.5" style="width: 100%; margin-bottom: 8px; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 13px;">
+                <input type="text" id="cloneModels" placeholder="Batch models: oswe-large-m5a1s120, Claude-Opus-4.5, gpt-5.1-codex-max" style="width: 100%; margin-bottom: 8px; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 13px;">
+                <input type="text" id="cloneRepo" placeholder="https://github.com/ghcpd/v-owenhu_26_01_16_case3.git" style="width: 100%; margin-bottom: 8px; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 13px;">
+                <button onclick="generateCloneScript()" style="width: 100%; margin-bottom: 12px;">Generate Commands</button>
+                
+                <div style="font-size: 13px; font-weight: 600; color: #555;">Single Command:</div>
+                <div id="singleOutput" style="padding: 12px; background: #f8f9fa; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 13px; color: #333; min-height: 44px; word-break: break-all; margin-bottom: 6px;"></div>
+                <button onclick="copyCloneScript('single')" style="width: 100%; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); margin-bottom: 12px;">Copy Single Command</button>
+                
+                <div style="font-size: 13px; font-weight: 600; color: #555;">Batch Command:</div>
+                <div id="cloneOutput" style="padding: 12px; background: #f8f9fa; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 13px; color: #333; min-height: 44px; word-break: break-all; margin-bottom: 6px;"></div>
+                <button onclick="copyCloneScript('batch')" style="width: 100%; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">Copy Batch Command</button>
+            </div>
+            
+            <div class="results">
+                <h2>Results</h2>
+                <div id="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const criteriaAPI = [
+            { name: 'Correctness & Fidelity', weight: 0.5 },
+            { name: 'Completeness', weight: 0.3 },
+            { name: 'Smoothness & Developer Experience', weight: 0.1 },
+            { name: 'Documentation & Clarity', weight: 0.1 }
+        ];
+        
+        const criteriaUI = [
+            { name: 'Correctness & Fidelity', weight: 0.25 },
+            { name: 'Completeness', weight: 0.2 },
+            { name: 'Smoothness & Developer Experience', weight: 0.15 },
+            { name: 'Documentation & Clarity', weight: 0.1 },
+            { name: 'UI Aesthetics', weight: 0.3 }
+        ];
+        
+        let currentMode = 'API';
+        let criteria = criteriaAPI;
+        
+        const scoreOptions = [6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0];
+        
+        let models = [];
+        let lastCloneCommand = '';
+        let lastSingleCommand = '';
+        
+        function toggleCollapse(modelIndex) {
+            models[modelIndex].collapsed = !models[modelIndex].collapsed;
+            renderModels();
+        }
+        
+        function highlightCard(modelIndex) {
+            setTimeout(() => {
+                const cards = document.querySelectorAll('.model-box');
+                if (cards[modelIndex]) {
+                    cards[modelIndex].classList.add('highlight');
+                    setTimeout(() => {
+                        cards[modelIndex].classList.remove('highlight');
+                    }, 800);
+                }
+            }, 50);
+        }
+        
+        function switchMode(mode) {
+            if (currentMode === mode) return;
+            
+            // Ask for confirmation if there are models with scores
+            if (models.length > 0 && models.some(m => m.aiScores.length > 0 || m.personalScores.length > 0)) {
+                if (!confirm('Switching modes will reset all scores. Continue?')) {
+                    return;
+                }
+            }
+            
+            currentMode = mode;
+            criteria = mode === 'API' ? criteriaAPI : criteriaUI;
+            
+            // Reset all scores
+            models.forEach(model => {
+                model.aiScores = [];
+                model.personalScores = [];
+            });
+            
+            // Update UI
+            document.querySelectorAll('.mode-option').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === mode);
+            });
+            
+            renderModels();
+            updateResults();
+        }
+        
+        function addModel() {
+            const nameInput = document.getElementById('modelName');
+            const input = nameInput.value.trim();
+            
+            if (!input) {
+                alert('Please enter a model name');
+                return;
+            }
+            
+            // 支持逗号分隔的多个模型名称
+            const names = input.split(',').map(n => n.trim()).filter(n => n);
+            let added = 0;
+            let skipped = [];
+            
+            for (const name of names) {
+                if (models.find(m => m.name === name)) {
+                    skipped.push(name);
+                    continue;
+                }
+                
+                models.push({
+                    name: name,
+                    aiScores: [],
+                    personalScores: [],
+                    collapsed: false
+                });
+                added++;
+            }
+            
+            nameInput.value = '';
+            renderModels();
+            updateResults();
+            
+            if (skipped.length > 0) {
+                alert(`Skipped ${skipped.length} existing model(s): ${skipped.join(', ')}`);
+            }
+        }
+        
+        function setScore(modelIndex, type, criterionIndex, value) {
+            const model = models[modelIndex];
+            const score = parseFloat(value);
+            if (isNaN(score) || score < 0 || score > 10) {
+                return; // 无效分数不更新
+            }
+            if (type === 'ai') {
+                model.aiScores[criterionIndex] = score;
+            } else {
+                model.personalScores[criterionIndex] = score;
+            }
+            updateResults();
+        }
+        
+        function renderModels() {
+            const container = document.getElementById('models');
+            container.innerHTML = models.map((model, mIdx) => {
+                const aiFilled = model.aiScores.filter(s => s !== undefined).length;
+                const personalFilled = model.personalScores.filter(s => s !== undefined).length;
+                const total = criteria.length;
+                const totalFilled = aiFilled + personalFilled;
+                const totalRequired = total * 2;
+                const hasScores = aiFilled > 0 || personalFilled > 0;
+                
+                // 计算分数摘要
+                const aiScore = weightedScore(model.aiScores);
+                const personalScore = weightedScore(model.personalScores);
+                const combinedScore = (aiScore !== null && personalScore !== null) 
+                    ? Math.round(((aiScore + personalScore) / 2) * 1000) / 1000 
+                    : null;
+                
+                // 没有分数时显示简化卡片
+                if (!hasScores) {
+                    return `
+                        <div class="model-box" style="padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="model-name">${model.name} <span style="font-size: 12px; color: #999; font-weight: normal;">[${currentMode} Mode]</span></span>
+                                <button class="import-btn-inline" onclick="openImportModal(${mIdx})">📥 Import Scores</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // 折叠状态显示摘要
+                if (model.collapsed) {
+                    return `
+                        <div class="model-box" style="padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="model-name">${model.name} <span style="font-size: 12px; color: #999; font-weight: normal;">[${currentMode} Mode]</span></span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button class="import-btn-inline" onclick="openImportModal(${mIdx})">📥</button>
+                                    <button class="collapse-btn" onclick="toggleCollapse(${mIdx})">▼ Expand</button>
+                                </div>
+                            </div>
+                            <div class="score-summary">
+                                <div class="score-summary-item">
+                                    <span class="score-summary-label">AI:</span>
+                                    <span class="score-summary-value ${aiScore === null ? 'incomplete' : ''}">${aiScore !== null ? aiScore.toFixed(2) : '—'}</span>
+                                </div>
+                                <div class="score-summary-item">
+                                    <span class="score-summary-label">Personal:</span>
+                                    <span class="score-summary-value ${personalScore === null ? 'incomplete' : ''}">${personalScore !== null ? personalScore.toFixed(2) : '—'}</span>
+                                </div>
+                                <div class="score-summary-item">
+                                    <span class="score-summary-label">Combined:</span>
+                                    <span class="score-summary-value ${combinedScore === null ? 'incomplete' : ''}" style="${combinedScore !== null ? 'color: #48bb78;' : ''}">${combinedScore !== null ? combinedScore.toFixed(3) : '—'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // 展开状态显示完整卡片
+                return `
+                    <div class="model-box">
+                        <div class="model-header">
+                            <span class="model-name">${model.name} <span style="font-size: 12px; color: #999; font-weight: normal;">[${currentMode} Mode]</span></span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="import-btn-inline" onclick="openImportModal(${mIdx})">📥 Re-import</button>
+                                <button class="collapse-btn" onclick="toggleCollapse(${mIdx})">▲ Collapse</button>
+                                <span class="progress">${totalFilled}/${totalRequired}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="score-section">
+                            <div class="section-title">AI Score (${aiFilled}/${total})</div>
+                            ${criteria.map((criterion, cIdx) => `
+                                <div class="criterion">
+                                    <div class="criterion-name">${criterion.name} (${criterion.weight * 100}%)</div>
+                                    <div class="score-buttons">
+                                        <input type="number" step="0.1" min="0" max="10" 
+                                            class="score-input ${model.aiScores[cIdx] !== undefined ? 'has-value' : ''}"
+                                            value="${model.aiScores[cIdx] !== undefined ? model.aiScores[cIdx] : ''}"
+                                            placeholder="—"
+                                            onchange="setScore(${mIdx}, 'ai', ${cIdx}, this.value)"
+                                        />
+                                        <span class="score-display">/ 10</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="score-section">
+                            <div class="section-title">Personal Score (${personalFilled}/${total})</div>
+                            ${criteria.map((criterion, cIdx) => `
+                                <div class="criterion">
+                                    <div class="criterion-name">${criterion.name} (${criterion.weight * 100}%)</div>
+                                    <div class="score-buttons">
+                                        <input type="number" step="0.1" min="0" max="10" 
+                                            class="score-input ${model.personalScores[cIdx] !== undefined ? 'has-value' : ''}"
+                                            value="${model.personalScores[cIdx] !== undefined ? model.personalScores[cIdx] : ''}"
+                                            placeholder="—"
+                                            onchange="setScore(${mIdx}, 'personal', ${cIdx}, this.value)"
+                                        />
+                                        <span class="score-display">/ 10</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function importScoresFromPanel() {
+            const textarea = document.getElementById('importTextarea');
+            const text = textarea.value.trim();
+            
+            if (models.length === 0) {
+                alert('Please add a model first');
+                return;
+            }
+            
+            if (!text) {
+                alert('Please paste the scores text');
+                return;
+            }
+            
+            // Import to the latest (last) model
+            const latestModelIndex = models.length - 1;
+            const latestModelName = models[latestModelIndex].name;
+            
+            importScores(latestModelIndex, text);
+            textarea.value = '';
+            
+            alert(`Scores imported successfully to "${latestModelName}"!`);
+        }
+        
+        function importScores(modelIndex, text) {
+            try {
+                const model = models[modelIndex];
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                
+                let currentType = null; // 'ai' or 'personal'
+                
+                for (const line of lines) {
+                    // Detect section headers
+                    if (line.includes('AI Score')) {
+                        currentType = 'ai';
+                        continue;
+                    }
+                    if (line.includes('Personal Score')) {
+                        currentType = 'personal';
+                        continue;
+                    }
+                    
+                    // Parse score lines
+                    if (currentType && line.includes('—')) {
+                        // Extract criterion name and score
+                        const parts = line.split('—');
+                        if (parts.length >= 2) {
+                            const criterionPart = parts[0].trim();
+                            const scorePart = parts[1].trim();
+                            
+                            // Extract score value (e.g., "9.5/10" -> 9.5)
+                            const scoreMatch = scorePart.match(/(\d+\.?\d*)\s*\/\s*10/);
+                            if (scoreMatch) {
+                                const score = parseFloat(scoreMatch[1]);
+                                
+                                // Match criterion name
+                                for (let i = 0; i < criteria.length; i++) {
+                                    const criterion = criteria[i];
+                                    // Check if the line contains the criterion name
+                                    if (criterionPart.includes(criterion.name)) {
+                                        if (currentType === 'ai') {
+                                            model.aiScores[i] = score;
+                                        } else {
+                                            model.personalScores[i] = score;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                renderModels();
+                updateResults();
+                highlightCard(modelIndex);
+            } catch (error) {
+                alert('Error parsing scores: ' + error.message);
+            }
+        }
+        
+        function weightedScore(scores) {
+            if (scores.some(s => s === undefined)) return null;
+            const raw = criteria.reduce((sum, c, i) => sum + scores[i] * c.weight, 0);
+            return Math.round(raw * 1000) / 1000;
+        }
+        
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (models.length === 0) {
+                resultsDiv.innerHTML = '<p style="color: #999;">No models added yet</p>';
+                return;
+            }
+            
+            const results = models.map(model => ({
+                name: model.name,
+                aiScore: weightedScore(model.aiScores),
+                personalScore: weightedScore(model.personalScores),
+                combinedScore: (() => {
+                    const ai = weightedScore(model.aiScores);
+                    const personal = weightedScore(model.personalScores);
+                    if (ai === null || personal === null) return null;
+                    return Math.round(((ai + personal) / 2) * 1000) / 1000;
+                })()
+            }));
+            
+            const resultsHtml = results.map(r => `
+                <div class="result-item">
+                    <div class="result-name">${r.name}</div>
+                    <div class="result-scores">
+                        <div><span class="score-label">AI Score:</span> ${r.aiScore !== null ? r.aiScore.toFixed(3) : 'Incomplete'}</div>
+                        <div><span class="score-label">Personal Score:</span> ${r.personalScore !== null ? r.personalScore.toFixed(3) : 'Incomplete'}</div>
+                        <div><span class="score-label">Combined:</span> ${r.combinedScore !== null ? r.combinedScore.toFixed(3) : 'Incomplete'}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            const rankHtml = generateRank(results);
+            
+            resultsDiv.innerHTML = resultsHtml + rankHtml;
+        }
+        
+        function generateRank(results) {
+            const complete = results.filter(r => r.combinedScore !== null);
+            if (complete.length === 0) return '';
+            
+            const sorted = [...complete].sort((a, b) => b.combinedScore - a.combinedScore);
+            
+            const rankList = sorted.map((r, i) => 
+                `<li class="rank-item">${r.name}: ${r.combinedScore.toFixed(3)}</li>`
+            ).join('');
+            
+            return `
+                <div class="rank-section">
+                    <div class="rank-title">Rank</div>
+                    <ul class="rank-list">${rankList}</ul>
+                </div>
+            `;
+        }
+        
+        function convertTimestamp() {
+            const input = document.getElementById('timestampInput').value.trim();
+            const output = document.getElementById('convertedOutput');
+            
+            if (!input) {
+                output.innerHTML = '<span style="color: #999;">Please enter timestamp data</span>';
+                return;
+            }
+            
+            try {
+                // Find all numbers that look like timestamps (10 or 13 digits)
+                const timestampRegex = /\b(\d{10,13})\b/g;
+                let matches = [];
+                let match;
+                
+                while ((match = timestampRegex.exec(input)) !== null) {
+                    matches.push(match[1]);
+                }
+                
+                if (matches.length === 0) {
+                    output.innerHTML = '<span style="color: #ff6b6b;">No valid timestamps found. Please enter Unix timestamps (10 or 13 digits)</span>';
+                    return;
+                }
+                
+                // Convert each timestamp
+                const converted = matches.map(ts => {
+                    const timestamp = ts.length === 10 ? parseInt(ts) * 1000 : parseInt(ts);
+                    const date = new Date(timestamp);
+                    
+                    if (isNaN(date.getTime())) {
+                        return 'Invalid timestamp';
+                    }
+                    
+                    // Format: 2025-12-25 13:55:49
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    
+                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                });
+                
+                output.innerHTML = `<div style="color: #28a745; font-weight: 600; margin-bottom: 8px;">Converted:</div>${converted.join(',')}`;
+            } catch (error) {
+                output.innerHTML = `<span style="color: #ff6b6b;">Error: ${error.message}</span>`;
+            }
+        }
+        
+        document.getElementById('timestampInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                convertTimestamp();
+            }
+        });
+        
+        document.getElementById('modelName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addModel();
+            }
+        });
+
+        function generateCloneScript() {
+            const modelsInput = document.getElementById('cloneModels').value;
+            const singleModel = document.getElementById('singleModel').value.trim();
+            const repoInput = document.getElementById('cloneRepo').value.trim();
+            const output = document.getElementById('cloneOutput');
+            const singleOutput = document.getElementById('singleOutput');
+            const modelList = modelsInput.split(',').map(m => m.trim()).filter(Boolean);
+
+            // Generate batch command (PowerShell native)
+            if (modelList.length > 0 && repoInput) {
+                const modelsPart = modelList.map(m => `"${m}"`).join(', ');
+                lastCloneCommand = `foreach ($f in ${modelsPart}) { mkdir $f -Force; cd $f; git clone ${repoInput}; cd .. }`;
+                output.textContent = lastCloneCommand;
+            } else {
+                output.innerHTML = '<span style="color: #999;">Enter batch models and repo URL</span>';
+                lastCloneCommand = '';
+            }
+
+            // Generate single command (PowerShell native)
+            if (singleModel && repoInput) {
+                lastSingleCommand = `mkdir "${singleModel}" -Force; cd "${singleModel}"; git clone ${repoInput}`;
+                singleOutput.textContent = lastSingleCommand;
+            } else {
+                singleOutput.innerHTML = '<span style="color: #999;">Enter single model and repo URL</span>';
+                lastSingleCommand = '';
+            }
+        }
+
+        function copyCloneScript(type) {
+            const cmd = type === 'batch' ? lastCloneCommand : lastSingleCommand;
+            if (!cmd) {
+                alert('Generate the command first.');
+                return;
+            }
+            navigator.clipboard.writeText(cmd).then(() => {
+                alert('Command copied to clipboard');
+            }).catch(() => {
+                alert('Copy failed. Please copy manually.');
+            });
+        }
+        
+        let importModalTarget = null;
+        
+        function openImportModal(modelIndex) {
+            importModalTarget = modelIndex;
+            const model = models[modelIndex];
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'importModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-title">📥 Import Scores to "${model.name}"</div>
+                    <textarea id="modalImportText" class="modal-textarea" placeholder="Paste formatted scores here...&#10;&#10;Example:&#10;AI Score (10-scale)&#10;Correctness & Fidelity (25%) — 9.5/10&#10;Completeness (20%) — 9.5/10&#10;...&#10;&#10;Personal Score (10-scale)&#10;Correctness & Fidelity (25%) — 10/10&#10;Completeness (20%) — 8.5/10&#10;..."></textarea>
+                    <div class="modal-buttons">
+                        <button class="modal-btn-cancel" onclick="closeImportModal()">Cancel</button>
+                        <button onclick="submitImportModal()">Import</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('textarea').focus();
+            
+            // 点击遮罩关闭
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeImportModal();
+            });
+        }
+        
+        function closeImportModal() {
+            const modal = document.getElementById('importModal');
+            if (modal) modal.remove();
+            importModalTarget = null;
+        }
+        
+        function submitImportModal() {
+            const text = document.getElementById('modalImportText').value.trim();
+            if (!text) {
+                alert('Please paste the scores text');
+                return;
+            }
+            importScores(importModalTarget, text);
+            closeImportModal();
+        }
+        
+        renderModels();
+        updateResults();
+    </script>
+</body>
+</html>

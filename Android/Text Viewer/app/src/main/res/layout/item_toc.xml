@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="14dp"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground">
+
+    <View
+        android:id="@+id/viewLevel"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary"
+        android:layout_marginEnd="12dp" />
+
+    <TextView
+        android:id="@+id/textTocTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:textColor="@color/textPrimary"
+        android:maxLines="2"
+        android:ellipsize="end"
+        tools:text="Chapter Title" />
+
+</LinearLayout>

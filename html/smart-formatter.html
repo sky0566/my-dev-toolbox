@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Formatter</title>
+    <link rel="stylesheet" href="katex.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f0f0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: 48px;
+            min-height: 48px;
+            background: #0078d4;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+
+        .header-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .header-title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .header-subtitle {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 2px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 3px;
+            padding: 2px;
+        }
+
+        .mode-btn {
+            padding: 4px 14px;
+            border: none;
+            border-radius: 2px;
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Segoe UI', sans-serif;
+            white-space: nowrap;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+
+        .mode-btn.active {
+            background: rgba(255,255,255,0.22);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            min-height: 0;
+        }
+
+        .panel {
+            flex: 1;
+            background: #fff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border-right: 1px solid #e1e1e1;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            height: 36px;
+            min-height: 36px;
+            background: #fafafa;
+            border-bottom: 1px solid #e1e1e1;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            border: none;
+            padding: 12px 14px;
+            font-family: 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            background: #fff;
+            color: #1b1b1b;
+        }
+
+        textarea:focus {
+            background: #fff;
+        }
+
+        textarea::placeholder {
+            color: #999;
+        }
+
+        .output-panel {
+            background: #1e1e1e;
+            position: relative;
+        }
+
+        .output-panel .panel-header {
+            background: #252526;
+            border-bottom: 1px solid #3c3c3c;
+            color: #ccc;
+        }
+
+        .output-panel.markdown-mode {
+            background: #fff;
+        }
+
+        .output-panel.markdown-mode .panel-header {
+            background: #fafafa;
+            border-bottom: 1px solid #e1e1e1;
+            color: #333;
+        }
+
+        .output-area {
+            width: 100%;
+            flex: 1;
+            padding: 12px 14px;
+            font-family: 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output-area.markdown-mode {
+            background: #fff;
+            color: #1b1b1b;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: normal;
+            padding: 16px 20px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .format-badge {
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .format-badge.json {
+            background: #0078d4;
+            color: white;
+        }
+
+        .format-badge.markdown {
+            background: #107c10;
+            color: white;
+        }
+
+        .format-badge.unknown {
+            background: #8a8886;
+            color: white;
+        }
+
+        .copy-btn {
+            padding: 2px 10px;
+            border: 1px solid #6b6b6b;
+            border-radius: 2px;
+            background: transparent;
+            color: #ccc;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #999;
+        }
+
+        .copy-btn.copied {
+            background: #107c10;
+            border-color: #107c10;
+            color: white;
+        }
+
+        .markdown-mode .copy-btn {
+            border-color: #c8c8c8;
+            color: #333;
+        }
+
+        .markdown-mode .copy-btn:hover {
+            background: #f3f3f3;
+            border-color: #999;
+        }
+
+        .json-key { color: #9cdcfe; }
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+        .json-boolean { color: #569cd6; }
+        .json-null { color: #c586c0; }
+
+        .output-area.markdown-mode h1 { font-size: 1.8em; margin: 0.6em 0 0.4em; border-bottom: 2px solid #0078d4; padding-bottom: 0.3em; color: #1b1b1b; }
+        .output-area.markdown-mode h2 { font-size: 1.4em; margin: 0.6em 0 0.3em; border-bottom: 1px solid #e1e1e1; padding-bottom: 0.25em; color: #1b1b1b; }
+        .output-area.markdown-mode h3 { font-size: 1.2em; margin: 0.5em 0; color: #1b1b1b; }
+        .output-area.markdown-mode h4 { font-size: 1em; margin: 0.5em 0; color: #323130; }
+        .output-area.markdown-mode h5 { font-size: 0.875em; margin: 0.5em 0; color: #605e5c; }
+        .output-area.markdown-mode h6 { font-size: 0.85em; margin: 0.5em 0; color: #8a8886; }
+        .output-area.markdown-mode p { margin: 0.8em 0; }
+        .output-area.markdown-mode code {
+            background: #f3f2f1;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.88em;
+            color: #d83b01;
+        }
+        .output-area.markdown-mode pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px 16px;
+            border-radius: 4px;
+            border: 1px solid #3c3c3c;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        .output-area.markdown-mode pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+            font-size: 13px;
+        }
+        .output-area.markdown-mode blockquote {
+            border-left: 3px solid #0078d4;
+            margin: 1em 0;
+            padding: 0.5em 1em;
+            background: #f3f9ff;
+            color: #323130;
+        }
+        .output-area.markdown-mode ul, .output-area.markdown-mode ol {
+            margin: 0.8em 0;
+            padding-left: 2em;
+        }
+        .output-area.markdown-mode li { margin: 0.25em 0; }
+        .output-area.markdown-mode a {
+            color: #0078d4;
+            text-decoration: none;
+        }
+        .output-area.markdown-mode a:hover { text-decoration: underline; }
+        .output-area.markdown-mode img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        .output-area.markdown-mode table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+            font-size: 13px;
+        }
+        .output-area.markdown-mode th, .output-area.markdown-mode td {
+            border: 1px solid #e1e1e1;
+            padding: 6px 12px;
+            text-align: left;
+        }
+        .output-area.markdown-mode th {
+            background: #fafafa;
+            font-weight: 600;
+            color: #323130;
+        }
+        .output-area.markdown-mode tr:nth-child(even) { background: #fafafa; }
+        .output-area.markdown-mode tr:hover { background: #f3f2f1; }
+        .output-area.markdown-mode hr {
+            border: none;
+            border-top: 1px solid #e1e1e1;
+            margin: 1.5em 0;
+        }
+        .output-area.markdown-mode strong { font-weight: 600; }
+        .output-area.markdown-mode em { font-style: italic; }
+        .output-area.markdown-mode del { text-decoration: line-through; color: #8a8886; }
+        .output-area.markdown-mode .math-display {
+            margin: 1em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .output-area::-webkit-scrollbar { width: 10px; }
+        .output-area::-webkit-scrollbar-track { background: #1e1e1e; }
+        .output-area::-webkit-scrollbar-thumb { background: #424242; border-radius: 0; }
+        .output-area::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+        .output-area.markdown-mode::-webkit-scrollbar-track { background: #f0f0f0; }
+        .output-area.markdown-mode::-webkit-scrollbar-thumb { background: #c8c8c8; }
+        textarea::-webkit-scrollbar { width: 10px; }
+        textarea::-webkit-scrollbar-track { background: #f0f0f0; }
+        textarea::-webkit-scrollbar-thumb { background: #c8c8c8; border-radius: 0; }
+        textarea::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        .back-to-top {
+            position: absolute;
+            bottom: 16px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 2px;
+            border: 1px solid #6b6b6b;
+            background: rgba(30,30,30,0.9);
+            color: #ccc;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            transition: background 0.15s;
+            z-index: 20;
+            line-height: 1;
+        }
+        .back-to-top:hover { background: #333; color: #fff; }
+        .back-to-top.visible { display: flex; }
+
+        .markdown-mode .back-to-top {
+            background: #fff;
+            color: #333;
+            border-color: #c8c8c8;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        .markdown-mode .back-to-top:hover { background: #f3f3f3; }
+
+        /* Read-only Mode */
+        body.readonly-mode .input-panel {
+            display: none;
+        }
+
+        body.readonly-mode .output-panel {
+            border-right: none;
+        }
+
+        body.readonly-mode .output-area {
+            padding: 20px 32px;
+        }
+
+        body.readonly-mode .output-area.markdown-mode {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 32px 48px;
+        }
+
+        body.readonly-mode .back-to-top {
+            bottom: 78px;
+            right: 32px;
+        }
+
+        /* Paste FAB */
+        .paste-fab {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            height: 40px;
+            border-radius: 20px;
+            background: #0078d4;
+            color: #fff;
+            border: none;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,120,212,0.35);
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 0 18px 0 14px;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+            z-index: 200;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 600;
+        }
+
+        .paste-fab:hover {
+            background: #106ebe;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0,120,212,0.4);
+        }
+
+        .paste-fab svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        body.readonly-mode .paste-fab {
+            display: flex;
+        }
+
+        /* Paste Modal */
+        .paste-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            backdrop-filter: blur(2px);
+        }
+
+        .paste-overlay.visible {
+            display: flex;
+        }
+
+        .paste-modal {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 680px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .paste-modal-header {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e1e1e1;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1b1b1b;
+        }
+
+        .paste-modal-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .paste-modal-close:hover {
+            background: #f3f2f1;
+            color: #1b1b1b;
+        }
+
+        .paste-modal textarea {
+            flex: 1;
+            min-height: 240px;
+            border: none;
+            padding: 16px 20px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        .paste-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid #e1e1e1;
+            background: #fafafa;
+        }
+
+        .paste-modal-hint {
+            margin-right: auto;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .paste-modal-btn {
+            padding: 7px 20px;
+            border: 1px solid #c8c8c8;
+            border-radius: 4px;
+            background: #fff;
+            color: #333;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .paste-modal-btn:hover {
+            background: #f3f2f1;
+        }
+
+        .paste-modal-btn.primary {
+            background: #0078d4;
+            color: #fff;
+            border-color: #0078d4;
+        }
+
+        .paste-modal-btn.primary:hover {
+            background: #106ebe;
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            opacity: 0.25;
+            margin-bottom: 4px;
+        }
+
+        .empty-state-title {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .empty-state-hint {
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .container { flex-direction: column; }
+            .header-subtitle { display: none; }
+            .mode-toggle { margin-left: auto; }
+            body.readonly-mode .output-area.markdown-mode {
+                padding: 20px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="6" width="12" height="12" rx="2" fill="#fff" opacity="0.9"/>
+                <rect x="18" y="6" width="12" height="5" rx="1.5" fill="#fff" opacity="0.7"/>
+                <rect x="18" y="14" width="12" height="5" rx="1.5" fill="#fff" opacity="0.5"/>
+                <rect x="2" y="22" width="28" height="4" rx="1.5" fill="#fff" opacity="0.35"/>
+                <path d="M6 10 L10 14 L14 8" stroke="#0078d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </div>
+        <span class="header-title">Smart Formatter</span>
+        <span class="header-subtitle">JSON &middot; Markdown &middot; Plain Text</span>
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="compareBtn" onclick="setMode('compare')">Compare</button>
+            <button class="mode-btn" id="readonlyBtn" onclick="setMode('readonly')">Read-only</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="panel input-panel">
+            <div class="panel-header">Input</div>
+            <textarea id="input" placeholder="Paste JSON or Markdown text...&#10;&#10;Auto-detect format and render"></textarea>
+        </div>
+
+        <div class="panel output-panel" id="outputPanel">
+            <div class="panel-header">
+                Output
+                <div class="toolbar">
+                    <span class="format-badge unknown" id="formatBadge">Unknown</span>
+                    <button class="copy-btn" onclick="copyOutput()">&#x2398; Copy</button>
+                </div>
+            </div>
+            <div id="output" class="output-area"></div>
+            <button class="back-to-top" id="backToTop" title="Back to top">&#x2191;</button>
+        </div>
+    </div>
+
+    <button class="paste-fab" id="pasteFab" onclick="openPasteModal()" title="Paste content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        </svg>
+        Paste
+    </button>
+
+    <div class="paste-overlay" id="pasteOverlay">
+        <div class="paste-modal">
+            <div class="paste-modal-header">
+                Paste Content
+                <button class="paste-modal-close" onclick="closePasteModal()">&times;</button>
+            </div>
+            <textarea id="pasteInput" placeholder="Paste JSON or Markdown text here..."></textarea>
+            <div class="paste-modal-footer">
+                <span class="paste-modal-hint">Ctrl+Enter to format</span>
+                <button class="paste-modal-btn" onclick="closePasteModal()">Cancel</button>
+                <button class="paste-modal-btn primary" onclick="applyPaste()">Format</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="katex.min.js"></script>
+    <script>
+        function detectFormat(text) {
+            text = text.trim();
+            if (!text) return 'unknown';
+
+            try {
+                JSON.parse(text);
+                return 'json';
+            } catch (e) {}
+
+            const mdPatterns = [
+                /^#{1,6}\s+/m,
+                /\*\*[^*]+\*\*/,
+                /\*[^*]+\*/,
+                /^\s*[-*+]\s+/m,
+                /^\s*\d+\.\s+/m,
+                /\[.+\]\(.+\)/,
+                /!\[.*\]\(.+\)/,
+                /^```/m,
+                /`[^`]+`/,
+                /^>\s+/m,
+                /^\|.+\|$/m,
+                /^---+$/m,
+                /~~[^~]+~~/,
+                /\$\$[\s\S]+?\$\$/,
+                /(?<![\\$\d])\$(?!\s)(?:[^$\\]|\\[\s\S]|\{[^}]*\})+?(?<!\s)\$(?![\d$])/,
+                /^<(?:div|span|p|ul|ol|li|table|h[1-6]|section|article|details|blockquote|figure)[\s>\/]/im,
+            ];
+
+            let mdScore = 0;
+            for (const pattern of mdPatterns) {
+                if (pattern.test(text)) mdScore++;
+            }
+
+            if (mdScore >= 1) return 'markdown';
+            return 'unknown';
+        }
+
+        function formatContent() {
+            const input = document.getElementById('input').value;
+            const output = document.getElementById('output');
+            const outputPanel = document.getElementById('outputPanel');
+            const badge = document.getElementById('formatBadge');
+            const text = input.trim();
+
+            if (!text) {
+                badge.textContent = 'Unknown';
+                badge.className = 'format-badge unknown';
+                output.className = 'output-area';
+                outputPanel.className = 'panel output-panel';
+                if (document.body.classList.contains('readonly-mode')) {
+                    output.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128203;</div><div class="empty-state-title">No content</div><div class="empty-state-hint">Click <strong style="color:#0078d4">Paste</strong> to add content</div></div>';
+                } else {
+                    output.innerHTML = '';
+                }
+                return;
+            }
+
+            const format = detectFormat(text);
+
+            if (format === 'json') {
+                badge.textContent = 'JSON';
+                badge.className = 'format-badge json';
+                output.className = 'output-area';
+                outputPanel.className = 'panel output-panel';
+                
+                try {
+                    const parsed = JSON.parse(text);
+                    const formatted = JSON.stringify(parsed, null, 4);
+                    output.innerHTML = syntaxHighlight(formatted);
+                } catch (e) {
+                    output.innerHTML = `<span style="color: #fc8181;">JSON Parse Error: ${escapeHtml(e.message)}</span>`;
+                }
+            } else if (format === 'markdown') {
+                badge.textContent = 'Markdown';
+                badge.className = 'format-badge markdown';
+                output.className = 'output-area markdown-mode';
+                outputPanel.className = 'panel output-panel markdown-mode';
+                output.innerHTML = parseMarkdown(text);
+            } else {
+                badge.textContent = 'Plain Text';
+                badge.className = 'format-badge unknown';
+                output.className = 'output-area';
+                outputPanel.className = 'panel output-panel';
+                output.textContent = text;
+            }
+        }
+
+        function normalizeMath(math) {
+            math = math.replace(/\\\\([a-zA-Z]+)/g, '\\$1');
+            math = math.replace(/\\_/g, '_');
+            return math;
+        }
+
+        function parseMarkdown(text) {
+            var PH = '\uE000';
+            var codeBlocks = [];
+            var inlineCodes = [];
+            var displayMaths = [];
+            var inlineMaths = [];
+            var tables = [];
+
+            text = text.replace(/^```([^\n]*)\n([\s\S]*?)^```[ \t]*$/gm, function(_, lang, code) {
+                var i = codeBlocks.length;
+                codeBlocks.push('<pre><code>' + escapeHtml(code) + '</code></pre>');
+                return '\n' + PH + 'CODEBLOCK' + i + PH + '\n';
+            });
+
+            text = text.replace(/`([^`]+)`/g, function(_, code) {
+                var i = inlineCodes.length;
+                inlineCodes.push('<code>' + escapeHtml(code) + '</code>');
+                return PH + 'INLINECODE' + i + PH;
+            });
+
+            text = text.replace(/\$\$([\s\S]+?)\$\$/g, function(_, math) {
+                var i = displayMaths.length;
+                displayMaths.push(normalizeMath(math));
+                return '\n' + PH + 'DISPLAYMATH' + i + PH + '\n';
+            });
+
+            text = text.replace(/(?<![\\$\d])\$(?!\s)((?:[^$\\]|\\[\s\S]|\{(?:[^{}]|\{[^{}]*\})*\})+?)(?<!\s)\$(?![\d$])/g, function(match, math) {
+                var i = inlineMaths.length;
+                inlineMaths.push(normalizeMath(math));
+                return PH + 'INLINEMATH' + i + PH;
+            });
+
+            // HTML tag passthrough (allowlisted)
+            var htmlTags = [];
+            var allowedTag = /^(div|span|p|br|ul|ol|li|strong|em|b|i|u|s|del|ins|sub|sup|mark|small|center|section|article|aside|nav|header|footer|details|summary|figure|figcaption|abbr|cite|dl|dt|dd|a|img|h[1-6]|hr|table|thead|tbody|tfoot|tr|th|td|caption|pre|code|blockquote|ruby|rt|rp|time|kbd|samp|var|wbr)$/i;
+            text = text.replace(/<(\/?)([\w]+)((?:\s+[\w-]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]*))?)*)(\s*\/?)>/g, function(match, close, tag, attrs, selfClose) {
+                if (!allowedTag.test(tag)) return match;
+                attrs = attrs.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|\S+)/gi, '');
+                attrs = attrs.replace(/href\s*=\s*"javascript:[^"]*"/gi, 'href="#"');
+                attrs = attrs.replace(/href\s*=\s*'javascript:[^']*'/gi, "href='#'");
+                var i = htmlTags.length;
+                htmlTags.push('<' + (close ? '/' : '') + tag + attrs + selfClose + '>');
+                return PH + 'HTMLTAG' + i + PH;
+            });
+
+            // Decode HTML entities
+            text = text.replace(/&(#\d+|#x[0-9a-f]+|amp|lt|gt|quot|apos|nbsp);/gi, function(match, entity) {
+                if (entity.charAt(0) === '#') {
+                    var code = entity.charAt(1).toLowerCase() === 'x'
+                        ? parseInt(entity.slice(2), 16)
+                        : parseInt(entity.slice(1), 10);
+                    return String.fromCharCode(code);
+                }
+                var map = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0' };
+                return map[entity.toLowerCase()] || match;
+            });
+
+            var html = escapeHtml(text);
+
+            function headingReplace(level) {
+                return function(_, text) {
+                    var id = text.replace(/<[^>]+>/g, '').trim()
+                        .toLowerCase()
+                        .replace(/[^\w\u4e00-\u9fff\u3400-\u4dbf\s-]/g, '')
+                        .replace(/\s+/g, '-');
+                    return '<h' + level + ' id="' + id + '">' + text + '</h' + level + '>';
+                };
+            }
+            html = html.replace(/^###### (.+)$/gm, headingReplace(6));
+            html = html.replace(/^##### (.+)$/gm, headingReplace(5));
+            html = html.replace(/^#### (.+)$/gm, headingReplace(4));
+            html = html.replace(/^### (.+)$/gm, headingReplace(3));
+            html = html.replace(/^## (.+)$/gm, headingReplace(2));
+            html = html.replace(/^# (.+)$/gm, headingReplace(1));
+
+            html = html.replace(/^---+$/gm, '<hr>');
+            html = html.replace(/^\*\*\*+$/gm, '<hr>');
+            html = html.replace(/^___+$/gm, '<hr>');
+
+            html = html.replace(/\*\*\*(\S(?:.*?\S)?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            html = html.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
+            html = html.replace(/(^|[^\w])___(\S(?:.*?\S)?)___([^\w]|$)/gm, '$1<strong><em>$2</em></strong>$3');
+            html = html.replace(/(^|[^\w])__(\S(?:.*?\S)?)__([^\w]|$)/gm, '$1<strong>$2</strong>$3');
+            html = html.replace(/(^|[^\w])_(\S(?:.*?\S)?)_([^\w]|$)/gm, '$1<em>$2</em>$3');
+
+            html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+            html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_, text, href) {
+                if (href.charAt(0) === '#') return '<a href="' + href + '">' + text + '</a>';
+                return '<a href="' + href + '" target="_blank" rel="noopener">' + text + '</a>';
+            });
+
+            html = html.replace(/^(\|.+\|)[ \t]*\n(\|[-:| \t]+\|)[ \t]*\n((?:\|.+\|[ \t]*(?:\n|$))*)/gm, function(match) {
+                var lines = match.trim().split('\n');
+                if (lines.length < 2) return match;
+                var sepCells = lines[1].split('|').filter(function(_, i, a) { return i > 0 && i < a.length - 1; });
+                var aligns = sepCells.map(function(cell) {
+                    cell = cell.trim();
+                    if (cell.charAt(0) === ':' && cell.charAt(cell.length - 1) === ':') return 'center';
+                    if (cell.charAt(cell.length - 1) === ':') return 'right';
+                    return 'left';
+                });
+                var headers = lines[0].split('|').filter(function(_, i, a) { return i > 0 && i < a.length - 1; });
+                var table = '<table><thead><tr>';
+                headers.forEach(function(header, i) {
+                    table += '<th style="text-align:' + (aligns[i] || 'left') + '">' + header.trim() + '</th>';
+                });
+                table += '</tr></thead><tbody>';
+                for (var r = 2; r < lines.length; r++) {
+                    var line = lines[r].trim();
+                    if (!line) continue;
+                    var cells = line.split('|').filter(function(_, i, a) { return i > 0 && i < a.length - 1; });
+                    table += '<tr>';
+                    cells.forEach(function(cell, i) {
+                        table += '<td style="text-align:' + (aligns[i] || 'left') + '">' + cell.trim() + '</td>';
+                    });
+                    table += '</tr>';
+                }
+                table += '</tbody></table>';
+                var idx = tables.length;
+                tables.push(table);
+                return PH + 'TABLE' + idx + PH;
+            });
+
+            html = html.replace(/^&gt;\s?(.+)$/gm, '<blockquote><p>$1</p></blockquote>');
+            html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
+
+            html = html.replace(/^[\s]*[-*+] (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+            html = html.replace(/^[\s]*\d+\. (.+)$/gm, '<oli>$1</oli>');
+            html = html.replace(/(<oli>.*<\/oli>\n?)+/g, function(match) {
+                return '<ol>' + match.replace(/<\/?oli>/g, function(tag) {
+                    return tag === '<oli>' ? '<li>' : '</li>';
+                }) + '</ol>';
+            });
+
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = '<p>' + html + '</p>';
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p>(<h[1-6][^>]*>)/g, '$1');
+            html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<ul>)/g, '$1');
+            html = html.replace(/(<\/ul>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<ol>)/g, '$1');
+            html = html.replace(/(<\/ol>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<blockquote>)/g, '$1');
+            html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<hr>)<\/p>/g, '$1');
+
+            var phEsc = PH.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            html = html.replace(new RegExp('<p>' + phEsc + '(CODEBLOCK|TABLE|DISPLAYMATH)', 'g'), PH + '$1');
+            html = html.replace(new RegExp('(CODEBLOCK|TABLE|DISPLAYMATH)\\d+' + phEsc + '<\\/p>', 'g'), function(match) {
+                return match.replace('</p>', '');
+            });
+
+            html = html.replace(new RegExp(phEsc + 'TABLE(\\d+)' + phEsc, 'g'), function(_, i) {
+                return tables[parseInt(i, 10)];
+            });
+
+            html = html.replace(new RegExp(phEsc + 'INLINECODE(\\d+)' + phEsc, 'g'), function(_, i) {
+                return inlineCodes[parseInt(i, 10)];
+            });
+
+            html = html.replace(new RegExp(phEsc + 'CODEBLOCK(\\d+)' + phEsc, 'g'), function(_, i) {
+                return codeBlocks[parseInt(i, 10)];
+            });
+
+            html = html.replace(new RegExp(phEsc + 'DISPLAYMATH(\\d+)' + phEsc, 'g'), function(_, i) {
+                var math = displayMaths[parseInt(i, 10)].trim();
+                if (typeof katex !== 'undefined') {
+                    try {
+                        return '<div class="math-display">' + katex.renderToString(math, { displayMode: true, throwOnError: false }) + '</div>';
+                    } catch (e) {}
+                }
+                return '<div class="math-display"><code>$$' + escapeHtml(math) + '$$</code></div>';
+            });
+
+            html = html.replace(new RegExp(phEsc + 'INLINEMATH(\\d+)' + phEsc, 'g'), function(_, i) {
+                var math = inlineMaths[parseInt(i, 10)];
+                if (typeof katex !== 'undefined') {
+                    try {
+                        return katex.renderToString(math, { displayMode: false, throwOnError: false });
+                    } catch (e) {}
+                }
+                return '<code>$' + escapeHtml(math) + '$</code>';
+            });
+
+            // Restore HTML tags
+            html = html.replace(new RegExp(phEsc + 'HTMLTAG(\\d+)' + phEsc, 'g'), function(_, i) {
+                return htmlTags[parseInt(i, 10)];
+            });
+
+            // Clean up <p> wrapping around block elements
+            html = html.replace(/<p>\s*(<(?:div|ul|ol|table|blockquote|details|figure|dl|section|article|aside|nav|header|footer|pre|h[1-6]|hr)\b)/gi, '$1');
+            html = html.replace(/(<\/(?:div|ul|ol|table|blockquote|details|figure|dl|section|article|aside|nav|header|footer|pre|h[1-6])>)\s*<\/p>/gi, '$1');
+            html = html.replace(/<br\s*\/?>\s*(<\/?(?:li|ul|ol|div|table|tr)\b)/gi, '$1');
+
+            return html;
+        }
+
+        function syntaxHighlight(json) {
+            json = escapeHtml(json);
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('output');
+            const btn = document.querySelector('.copy-btn');
+            // In Markdown mode, copy the source text to preserve LaTeX notation
+            const isMarkdown = output.classList.contains('markdown-mode');
+            const text = isMarkdown
+                ? (document.getElementById('input').value || '').trim()
+                : (output.textContent || output.innerText);
+            
+            if (!text) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                btn.innerHTML = '\u2714 Copied';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = '\u2398 Copy';
+                    btn.classList.remove('copied');
+                }, 1500);
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                btn.innerHTML = '\u2714 Copied';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = '\u2398 Copy';
+                    btn.classList.remove('copied');
+                }, 1500);
+            });
+        }
+
+        document.getElementById('input').addEventListener('mouseleave', function() {
+            if (this.value.trim()) {
+                formatContent();
+            }
+        });
+
+        document.getElementById('input').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                formatContent();
+            }
+        });
+
+        (function() {
+            var output = document.getElementById('output');
+            var btn = document.getElementById('backToTop');
+            output.addEventListener('scroll', function() {
+                btn.classList.toggle('visible', output.scrollTop > 200);
+            });
+            btn.addEventListener('click', function() {
+                output.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+
+        // Mode switching
+        function setMode(mode) {
+            var compareBtn = document.getElementById('compareBtn');
+            var readonlyBtn = document.getElementById('readonlyBtn');
+            if (mode === 'readonly') {
+                document.body.classList.add('readonly-mode');
+                compareBtn.classList.remove('active');
+                readonlyBtn.classList.add('active');
+                if (document.getElementById('input').value.trim()) {
+                    formatContent();
+                } else {
+                    formatContent();
+                }
+            } else {
+                document.body.classList.remove('readonly-mode');
+                compareBtn.classList.add('active');
+                readonlyBtn.classList.remove('active');
+            }
+        }
+
+        // Paste modal
+        function openPasteModal() {
+            var overlay = document.getElementById('pasteOverlay');
+            var input = document.getElementById('pasteInput');
+            overlay.classList.add('visible');
+            input.value = '';
+            input.focus();
+        }
+
+        function closePasteModal() {
+            document.getElementById('pasteOverlay').classList.remove('visible');
+        }
+
+        function applyPaste() {
+            var pasteInput = document.getElementById('pasteInput');
+            var mainInput = document.getElementById('input');
+            if (pasteInput.value.trim()) {
+                mainInput.value = pasteInput.value;
+                formatContent();
+            }
+            closePasteModal();
+        }
+
+        document.getElementById('pasteOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePasteModal();
+        });
+
+        document.getElementById('pasteInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                applyPaste();
+            } else if (e.key === 'Escape') {
+                closePasteModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('pasteOverlay').classList.contains('visible')) {
+                closePasteModal();
+            }
+        });
+    </script>
+</body>
+</html>

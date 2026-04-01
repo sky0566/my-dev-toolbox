@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DocReader" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+    
+    <style name="Theme.DocReader.Reader" parent="Theme.DocReader">
+        <item name="android:windowBackground">@color/readerBackground</item>
+        <item name="android:navigationBarColor">@color/readerBackground</item>
+    </style>
+    
+    <style name="Theme.DocReader.Splash" parent="Theme.DocReader">
+        <item name="android:windowBackground">@color/colorPrimary</item>
+    </style>
+</resources>

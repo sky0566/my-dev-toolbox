@@ -166,9 +166,10 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
   <a href="#s5">5. 性能基准对比</a>
   <a href="#s6">6. LLM 提供商生态</a>
   <a href="#s7">7. 部署场景</a>
-  <a href="#s8">8. 版本演进</a>
-  <a href="#s9">9. 快速入门</a>
-  <a href="#s10">10. 总结与展望</a>
+  <a href="#s8">8. OpenClaw 平替版图</a>
+  <a href="#s9">9. 版本演进</a>
+  <a href="#s10">10. 快速入门</a>
+  <a href="#s11">11. 总结与展望</a>
 </nav>
 
 <!-- MAIN -->
@@ -642,10 +643,103 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
   </div>
 </div>
 
-<!-- ====== 8. 版本演进 ====== -->
+<!-- ====== 8. OpenClaw 平替版图 ====== -->
 <span class="anchor" id="s8"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">8</span>版本演进</h2>
+  <h2 class="stitle"><span class="n">8</span>OpenClaw 平替版图</h2>
+
+  <div class="note">
+    <strong>先下结论：</strong>严格说，下面这些项目并不全是 OpenClaw 的“同形替代品”。真正最像 OpenClaw 的是 PicoClaw 和 NanoBot；Goose、Cline 更像开发者工作站 Agent；OpenHands 更像云端自主编程平台；Khoj 更偏“第二大脑 + 自动化助手”。但如果把“平替”理解为<strong>更低门槛、更可自托管、更低总体拥有成本</strong>的 Agent 路线，它们都值得放进同一张图里比较。
+  </div>
+
+  <div class="cht">
+    <div class="cht-t">代表性产品能力雷达图</div>
+    <canvas id="cAlternatives"></canvas>
+  </div>
+
+  <h3>8.1 六条代表性路线</h3>
+
+  <table>
+    <thead><tr><th>产品</th><th>技术路线</th><th>公开技术特点</th><th>低成本逻辑</th><th>公开商业化路径</th></tr></thead>
+    <tbody>
+      <tr><td><strong>OpenClaw</strong></td><td>TypeScript，本机常驻个人 Agent</td><td>多聊天渠道、持久记忆、浏览器控制、系统访问、技能/插件、50+ 集成</td><td>复用现有电脑或树莓派，而不是购买托管式“数字员工”服务</td><td>官网可见支点主要是 Sponsors、ClawHub 技能生态与社区分发，尚未看到明确 seat 制定价</td></tr>
+      <tr><td><strong>NanoBot</strong></td><td>Python，超轻量 OpenClaw 复刻路线</td><td>号称比 OpenClaw 少 99% 代码量；PyPI/uv 安装；多渠道；MCP；OpenAI 兼容 API；多实例</td><td>更小代码面、更低维护复杂度，普通 Linux 主机即可跑</td><td>官方定位更偏教育/研究；公开可见更像社区流量分发、API 计划合作与生态导流，商业化最轻</td></tr>
+      <tr><td><strong>PicoClaw</strong></td><td>Go，边缘硬件优先</td><td>单一静态二进制、&lt;10MB 内存、17+ 渠道、MCP、Android、RISC-V/ARM/x86 一体覆盖</td><td>把成本压到 $10 板卡和旧手机级别，几乎消灭运行时依赖</td><td>更接近“硬件带软件”模式：通过 Sipeed 硬件销售、品牌入口和生态拉动，而不是直接按席位收费</td></tr>
+      <tr><td><strong>Goose</strong></td><td>Rust + TypeScript，本地工程 Agent</td><td>本地运行、CLI + Desktop、任意 LLM、多模型配置、MCP、自定义发行版</td><td>复用开发者现有工作站，通过 BYOK/BYOM 控制模型成本</td><td>公开资料看更像 Block 的战略型开源项目，收益偏间接：品牌、生态、企业开发效率，而非独立 SaaS 订阅</td></tr>
+      <tr><td><strong>Cline</strong></td><td>IDE 内嵌 Agent</td><td>VS Code/CLI、终端执行、文件编辑、浏览器控制、MCP、成本可视化、检查点回滚</td><td>插件免费，直接叠加在现有 IDE 和现有 API key 之上</td><td>路径最清晰：个人版免费；Teams 在 2026 Q1 后 $20/人/月；Enterprise 定制价；也支持走 Cline credits</td></tr>
+      <tr><td><strong>OpenHands</strong></td><td>Python + TypeScript，云端/企业级自主开发平台</td><td>CLI、Local GUI、Cloud、SDK、容器化沙箱运行时、Slack/Jira/Linear 集成、可扩到上千 Agent</td><td>本地可跑、云端可试用、支持自带模型，成本重点从“人工外包”转为“容器 + LLM”</td><td>Cloud + Enterprise 双轮：云端托管试用，企业版 license、自托管 VPC、支持服务与研究团队合作</td></tr>
+      <tr><td><strong>Khoj</strong></td><td>个人知识与自动化 Agent</td><td>自托管、Web/Obsidian/Emacs/Phone/WhatsApp、多文档检索、语义搜索、定时自动化、可接本地模型</td><td>不是纯 coding agent，可把“知识库 + 研究 + 自动化”整合到一个低成本栈里</td><td>Cloud App + Enterprise/on-prem + GitHub Sponsors，商业化成熟度介于社区项目和企业产品之间</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 为什么这几家最有代表性</h3>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-w">🪶</div>极限轻量路线</div>
+      <p><strong>PicoClaw / NanoBot</strong> 代表的是“先把资源压到极限，再谈 Agent 能力扩张”的路线，核心竞争力是启动成本、部署范围和代码复杂度。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">💻</div>开发者工作站路线</div>
+      <p><strong>Goose / Cline</strong> 把重点放在“工程任务闭环”上：读代码、改文件、跑命令、调用 MCP、修错误，目标用户是程序员而不是家庭助理场景。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">☁️</div>云与企业路线</div>
+      <p><strong>OpenHands / Khoj</strong> 更强调平台化、协作、权限、知识资产沉淀和企业工作流，商业化接口也最完整。</p>
+    </div>
+  </div>
+
+  <div class="hbox amber">
+    <strong>一个很实用的判断：</strong>如果你想要“像 OpenClaw 一样住在聊天软件里、全天候帮你办事”，优先看 PicoClaw / NanoBot；如果你要“坐在 IDE 旁边帮你写代码”，优先看 Cline / Goose；如果你要“多用户、多权限、企业开发平台”，优先看 OpenHands；如果你更看重知识检索与个人研究流，Khoj 更像另一条正交路线。
+  </div>
+
+  <h3>8.3 它们靠什么赚钱</h3>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-o">🧾</div>Seat 与企业订阅</div>
+      <p>最典型的是 <strong>Cline</strong> 和 <strong>OpenHands</strong>。前者已经公开 Teams / Enterprise 结构，后者公开 Cloud 与 Enterprise license、自托管 VPC、支持服务。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">🧩</div>生态平台与增值层</div>
+      <p><strong>OpenClaw</strong> 的 Sponsors、ClawHub 技能生态，说明赚钱点正在从“单个 Agent 本体”迁移到“技能分发、托管、增值服务、合作渠道”。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">🛠️</div>硬件或战略补贴</div>
+      <p><strong>PicoClaw</strong> 更像硬件生态牵引软件增长；<strong>Goose</strong> 则更像大厂战略型开源投入，商业回报更多体现在品牌、开发效率与生态控制力。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-p">🌱</div>社区赞助与流量导流</div>
+      <p><strong>NanoBot</strong>、<strong>Khoj</strong> 这类项目更常见的路径是 Sponsors、云试用、合作链接、社区转化。它们的核心优势不是先卖 license，而是先占住开发者心智。</p>
+    </div>
+  </div>
+
+  <h3>8.4 对整个生态的影响</h3>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-r">📉</div>把 Agent 成本曲线打下来了</div>
+      <p>OpenClaw 证明“个人 Agent”可行，PicoClaw / NanoBot 则把门槛继续下探。现在竞争不再只是模型能力，而是谁能把 Agent 跑在更便宜、更普遍的设备上。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-w">🔌</div>MCP 正在变成共同底座</div>
+      <p>PicoClaw、NanoBot、Goose、Cline、OpenHands 都在不同程度上拥抱 MCP。这意味着未来竞争更多发生在编排层、权限层、UI 和生态层，而不是每家都重造插件系统。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">🧭</div>赛道开始明显分层</div>
+      <p>你会看到四条主线：<strong>边缘硬件型</strong>、<strong>IDE 型</strong>、<strong>云端企业型</strong>、<strong>个人知识型</strong>。它们互相借鉴，但不会完全收敛成同一种产品。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">💸</div>利润池正在迁移</div>
+      <p>未来真正能赚钱的，未必是“会写代码的 Agent”本身，而是围绕它的<strong>团队管控、托管运行、企业集成、市场分发、模型结算和硬件入口</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 9. 版本演进 ====== -->
+<span class="anchor" id="s9"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">9</span>版本演进</h2>
 
   <table>
     <thead><tr><th>版本</th><th>日期</th><th>核心更新</th><th>Stars</th></tr></thead>
@@ -667,12 +761,12 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
   </div>
 </div>
 
-<!-- ====== 9. 快速入门 ====== -->
-<span class="anchor" id="s9"></span>
+<!-- ====== 10. 快速入门 ====== -->
+<span class="anchor" id="s10"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">9</span>快速入门</h2>
+  <h2 class="stitle"><span class="n">10</span>快速入门</h2>
 
-  <h3>9.1 三步上手</h3>
+  <h3>10.1 三步上手</h3>
   <div class="flow-h">
     <div class="flow-s">① picoclaw onboard</div>
     <div class="flow-a">→</div>
@@ -694,7 +788,7 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
     </div>
   </div>
 
-  <h3>9.2 配置示例</h3>
+  <h3>10.2 配置示例</h3>
   <div class="card">
     <pre style="font-size:13px;line-height:1.5;overflow-x:auto;color:#334155;">{
   "version": 2,
@@ -722,7 +816,7 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
 }</pre>
   </div>
 
-  <h3>9.3 安装方式</h3>
+  <h3>10.3 安装方式</h3>
   <table>
     <thead><tr><th>方式</th><th>命令 / 操作</th><th>适用场景</th></tr></thead>
     <tbody>
@@ -735,10 +829,41 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
   </table>
 </div>
 
-<!-- ====== 10. 总结与展望 ====== -->
-<span class="anchor" id="s10"></span>
+<!-- ====== 11. 总结与展望 ====== -->
+<span class="anchor" id="s11"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">10</span>总结与展望</h2>
+  <h2 class="stitle"><span class="n">11</span>总结与展望</h2>
+
+  <div class="hbox green">
+    <strong>一句话选型建议：</strong>如果你追求“像 OpenClaw，但更便宜更轻”，先看 PicoClaw 和 NanoBot；如果你核心场景是写代码，优先 Cline 或 Goose；如果你需要团队协作、权限和托管，优先 OpenHands；如果你的核心资产是文档、知识和研究工作流，Khoj 更值得长期投入。
+  </div>
+
+  <h3>11.1 谁最适合谁</h3>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-w">🦀</div>谁最像 OpenClaw</div>
+      <p><strong>PicoClaw</strong> 和 <strong>NanoBot</strong> 最像。它们都保留了“常驻 Agent + 多渠道 + 技能/MCP + 自托管”的精神，只是分别走了 Go 极限轻量和 Python 极简复刻两条路。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">🏠</div>谁最适合个人用户</div>
+      <p><strong>PicoClaw</strong> 适合预算敏感、喜欢折腾硬件和旧设备复用的人；<strong>Cline</strong> 适合已经在 VS Code 里工作的个人开发者；<strong>Khoj</strong> 适合知识工作者和研究型用户。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-b">🏢</div>谁最适合企业</div>
+      <p><strong>OpenHands</strong> 和 <strong>Cline Enterprise</strong> 最成熟。前者更像自主开发平台，后者更像开发团队增效层。企业真正买单的点通常不是“能写代码”，而是权限、审计、VPC、支持服务和可控性。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-o">📈</div>谁最有商业化潜力</div>
+      <p><strong>Cline</strong> 的路径最清晰，已经公开 Teams/Enterprise 结构；<strong>OpenHands</strong> 的天花板最高，适合平台化和大客户；<strong>PicoClaw</strong> 则有硬件入口优势，可能在边缘 AI 场景里跑出差异化商业闭环。</p>
+    </div>
+  </div>
+
+  <h3>11.2 一个更现实的行业判断</h3>
+
+  <div class="note">
+    <strong>真正的竞争焦点正在变化：</strong>2025 年比拼的是“谁先把个人 Agent 做出来”，2026 年开始比拼的是“谁能把 Agent 变成稳定产品”。这意味着胜负手不只在模型上，而在于 <strong>权限体系、工作流闭环、渠道接入、部署成本、生态扩展、商业化耐久性</strong>。从这个角度看，PicoClaw 的价值不只是轻，而是它把“个人 Agent”从高配电脑拉到了低配设备；这会逼着整个赛道重新定价。
+  </div>
 
   <div class="grid3">
     <div class="card" style="border-top:3px solid var(--green);">
@@ -786,7 +911,7 @@ tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{backgr
 <!-- FOOTER -->
 <div class="footer">
   <p>本报告基于 PicoClaw 公开文档和 GitHub 仓库信息整理，仅供技术参考。</p>
-  <p>数据来源：<a href="https://github.com/sipeed/picoclaw" style="color:var(--pri);">github.com/sipeed/picoclaw</a> · <a href="https://docs.picoclaw.io" style="color:var(--pri);">docs.picoclaw.io</a> · 更新日期：2026 年 4 月</p>
+  <p>数据来源：<a href="https://github.com/sipeed/picoclaw" style="color:var(--pri);">github.com/sipeed/picoclaw</a> · <a href="https://openclaw.ai/" style="color:var(--pri);">openclaw.ai</a> · <a href="https://github.com/HKUDS/nanobot" style="color:var(--pri);">github.com/HKUDS/nanobot</a> · <a href="https://block.github.io/goose/" style="color:var(--pri);">block.github.io/goose</a> · <a href="https://github.com/cline/cline" style="color:var(--pri);">github.com/cline/cline</a> · <a href="https://openhands.dev/" style="color:var(--pri);">openhands.dev</a> · <a href="https://khoj.dev/" style="color:var(--pri);">khoj.dev</a> · 更新日期：2026 年 4 月</p>
 </div>
 
 <!-- SCROLL TOP -->
@@ -858,6 +983,22 @@ new Chart(document.getElementById('cProviders'),{
     datasets:[{data:[12,8,3,7],backgroundColor:[B,R,G,P]}]
   },
   options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}}}}
+});
+
+// 5. Alternatives radar
+new Chart(document.getElementById('cAlternatives'),{
+  type:'radar',
+  data:{
+    labels:['轻量化','低成本','部署自由度','工程执行力','企业化','生态成熟度'],
+    datasets:[
+      {label:'OpenClaw',data:[40,55,85,88,45,82],borderColor:R,backgroundColor:'rgba(239,68,68,.08)',pointBackgroundColor:R},
+      {label:'PicoClaw',data:[98,95,92,70,40,75],borderColor:W,backgroundColor:'rgba(245,158,11,.08)',pointBackgroundColor:W},
+      {label:'NanoBot',data:[85,88,90,72,35,78],borderColor:G,backgroundColor:'rgba(16,185,129,.08)',pointBackgroundColor:G},
+      {label:'Cline',data:[55,80,70,95,78,92],borderColor:B,backgroundColor:'rgba(59,130,246,.08)',pointBackgroundColor:B},
+      {label:'OpenHands',data:[35,60,75,92,95,90],borderColor:P,backgroundColor:'rgba(139,92,246,.08)',pointBackgroundColor:P}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20}}}}
 });
 
 // 5. Stars growth

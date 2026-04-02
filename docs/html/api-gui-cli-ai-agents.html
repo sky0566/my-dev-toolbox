@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API · GUI · CLI — AI Agent 如何驾驭三大接口</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--pri:#3b82f6;--dark:#0f172a;--gray:#1e293b;--red:#ef4444;--blue:#3b82f6;--green:#10b981;--purple:#8b5cf6;--accent:#f97316;--cyan:#06b6d4;--light:#f8fafc;--teal:#14b8a6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;background:var(--light);color:#334155;line-height:1.8;}
+
+.topnav{position:fixed;top:0;left:0;right:0;height:56px;background:var(--dark);display:flex;align-items:center;padding:0 28px;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,.4);}
+.topnav .logo{display:flex;align-items:center;gap:10px;}
+.topnav .logo-icon{width:34px;height:34px;background:var(--pri);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;}
+.topnav .logo-text{color:#fff;font-size:15px;font-weight:700;}
+.topnav .logo-text em{color:var(--pri);font-style:normal;}
+.topnav .spacer{flex:1;}
+.topnav .badge{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;padding:3px 12px;border-radius:16px;font-size:11px;font-weight:600;}
+.topnav .date{color:rgba(255,255,255,.4);font-size:12px;margin-left:16px;}
+.toc-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;margin-right:12px;}
+
+.toc{position:fixed;top:56px;left:0;bottom:0;width:240px;background:#fff;border-right:1px solid #e2e8f0;overflow-y:auto;z-index:900;padding:16px 0;transition:transform .3s;}
+.toc h4{padding:0 18px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:10px;}
+.toc a{display:block;padding:7px 18px;color:#64748b;text-decoration:none;font-size:12.5px;border-left:3px solid transparent;transition:all .15s;}
+.toc a:hover,.toc a.on{background:rgba(59,130,246,.06);color:var(--pri);border-left-color:var(--pri);}
+.toc a.sub{padding-left:32px;font-size:11.5px;color:#94a3b8;}
+
+.main{margin-left:240px;margin-top:56px;padding:36px 44px 80px;max-width:1060px;}
+@media(max-width:860px){
+  .toc{transform:translateX(-100%);}.toc.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2);}
+  .main{margin-left:0;padding:20px 14px 60px;}.toc-btn{display:block;}
+  .grid2,.grid3{grid-template-columns:1fr!important;}
+  .hero{padding:36px 20px!important;}.hero h1{font-size:22px!important;}
+  .cmp{grid-template-columns:1fr!important;}
+}
+
+.hero{background:linear-gradient(135deg,#020617 0%,#0c1836 30%,#1a1a4e 60%,#0f172a 100%);border-radius:16px;padding:56px 48px;color:#fff;margin-bottom:44px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-80px;right:-60px;width:400px;height:400px;background:radial-gradient(circle,rgba(59,130,246,.2) 0%,transparent 70%);border-radius:50%;}
+.hero::after{content:'';position:absolute;bottom:-120px;left:20%;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,transparent 70%);border-radius:50%;}
+.hero>*{position:relative;z-index:1;}
+.hero .eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:8px;}
+.hero h1{font-size:30px;margin-bottom:6px;line-height:1.3;}
+.hero h2{font-size:17px;font-weight:400;opacity:.7;margin-bottom:28px;}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.hero-stat{text-align:center;}.hero-stat .val{font-size:32px;font-weight:800;color:var(--cyan);}.hero-stat .lbl{font-size:11px;opacity:.6;margin-top:2px;}
+
+.sec{margin-bottom:48px;}
+.anchor{display:block;position:relative;top:-80px;visibility:hidden;}
+h2.stitle{font-size:22px;color:var(--dark);margin-bottom:20px;padding-bottom:10px;border-bottom:3px solid var(--pri);display:flex;align-items:center;gap:10px;}
+h2.stitle .n{background:var(--pri);color:#fff;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+h3{font-size:17px;color:var(--dark);margin:26px 0 12px;}
+p{margin-bottom:12px;color:#475569;font-size:14.5px;}
+
+.card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #e2e8f0;margin-bottom:20px;}
+.card-h{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.card-h .ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ic-r{background:rgba(239,68,68,.1);color:var(--red);}
+.ic-b{background:rgba(59,130,246,.1);color:var(--blue);}
+.ic-g{background:rgba(16,185,129,.1);color:var(--green);}
+.ic-p{background:rgba(139,92,246,.1);color:var(--purple);}
+.ic-o{background:rgba(249,115,22,.1);color:var(--accent);}
+.ic-c{background:rgba(6,182,212,.1);color:var(--cyan);}
+.ic-t{background:rgba(20,184,166,.1);color:var(--teal);}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin:18px 0;}
+
+table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:13.5px;}
+thead th{background:var(--dark);color:#fff;padding:10px 14px;text-align:left;font-weight:600;font-size:12.5px;}
+thead th:first-child{border-radius:8px 0 0 0;}thead th:last-child{border-radius:0 8px 0 0;}
+tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;}tbody tr:hover{background:#f8fafc;}
+
+.note{border-left:4px solid var(--accent);background:linear-gradient(135deg,#fffbeb,#fff);border-radius:0 10px 10px 0;padding:16px 20px;margin:16px 0;font-size:14px;color:#555;}
+.note strong{color:var(--dark);}
+.hbox{border:1px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff,#fff);border-radius:10px;padding:16px 20px;margin:16px 0;font-size:14px;}
+.hbox.green{background:linear-gradient(135deg,#ecfdf5,#fff);border-color:#a7f3d0;}
+.hbox.amber{background:linear-gradient(135deg,#fffbeb,#fff);border-color:#fde68a;}
+
+.cht{background:#fff;border-radius:12px;padding:22px;border:1px solid #e2e8f0;margin:18px 0;}
+.cht canvas{max-height:380px;}
+.cht-t{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;text-align:center;}
+
+.cmp{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;}
+.cmp-s{padding:22px;}
+.cmp-api{background:linear-gradient(135deg,#eff6ff,#fff);}
+.cmp-gui{background:linear-gradient(135deg,#fdf4ff,#fff);}
+.cmp-cli{background:linear-gradient(135deg,#ecfdf5,#fff);}
+.cmp-lb{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding:3px 10px;border-radius:4px;display:inline-block;}
+.cmp-api .cmp-lb{background:#dbeafe;color:#1d4ed8;}
+.cmp-gui .cmp-lb{background:#f3e8ff;color:#7c3aed;}
+.cmp-cli .cmp-lb{background:#d1fae5;color:#065f46;}
+
+.deep{border:2px solid var(--pri);border-radius:14px;padding:28px;margin:20px 0;background:linear-gradient(135deg,#f0f7ff,#fff);}
+.deep .dt{font-size:18px;font-weight:800;color:var(--pri);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+
+.flow-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+.flow-s{background:linear-gradient(135deg,var(--dark),var(--gray));color:#fff;padding:8px 16px;border-radius:7px;font-size:12px;font-weight:600;}
+.flow-a{color:var(--pri);font-size:18px;font-weight:bold;}
+
+.bar-g{display:flex;align-items:center;gap:10px;margin:8px 0;}
+.bar-l{min-width:140px;text-align:right;font-size:12px;color:#64748b;flex-shrink:0;}
+.bar-w{flex:1;height:24px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+.bar-f{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:10px;color:#fff;font-weight:700;}
+
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.tag{padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:600;}
+.t-b{background:#dbeafe;color:#1d4ed8;}.t-g{background:#d1fae5;color:#065f46;}.t-p{background:#ede9fe;color:#6d28d9;}.t-o{background:#ffedd5;color:#c2410c;}.t-c{background:#cffafe;color:#0e7490;}
+
+.tl{position:relative;padding-left:32px;margin:16px 0;}
+.tl::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:#e2e8f0;}
+.tl-i{position:relative;margin-bottom:20px;}
+.tl-i::before{content:'';position:absolute;left:-26px;top:6px;width:12px;height:12px;border-radius:50%;border:2px solid var(--pri);background:#fff;}
+.tl-i .yr{font-size:11px;font-weight:700;color:var(--pri);text-transform:uppercase;}
+.tl-i .desc{font-size:13px;color:#475569;}
+
+.footer{margin-left:240px;padding:20px 44px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;}
+@media(max-width:860px){.footer{margin-left:0;padding:20px 14px;}.cmp{grid-template-columns:1fr!important;}}
+.stt{position:fixed;bottom:28px;right:28px;width:40px;height:40px;background:var(--pri);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:18px;box-shadow:0 4px 12px rgba(59,130,246,.3);display:none;z-index:1001;}
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <button class="toc-btn" onclick="document.querySelector('.toc').classList.toggle('open')">☰</button>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text"><em>API · GUI · CLI</em> × AI Agent</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="badge">📊 技术趋势报告</div>
+  <div class="date">2026.04</div>
+</header>
+
+<nav class="toc" id="toc">
+  <h4>目录</h4>
+  <a href="#s1">1. 摘要</a>
+  <a href="#s2">2. 三大接口演进史</a>
+  <a href="#s2a" class="sub">└ API</a>
+  <a href="#s2b" class="sub">└ GUI</a>
+  <a href="#s2c" class="sub">└ CLI</a>
+  <a href="#s3">3. AI Agent 如何驾驭</a>
+  <a href="#s3a" class="sub">└ API: Function Calling</a>
+  <a href="#s3b" class="sub">└ GUI: Computer Use</a>
+  <a href="#s3c" class="sub">└ CLI: Agentic Coding</a>
+  <a href="#s4">4. 效果对比</a>
+  <a href="#s5">5. 市场接受度</a>
+  <a href="#s6">6. 产品版图</a>
+  <a href="#s7">7. 发展趋势</a>
+  <a href="#s8">8. 结论</a>
+  <a href="#refs">参考引用</a>
+</nav>
+
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="eyebrow">技术趋势报告 · 2026</div>
+  <h1>API · GUI · CLI — AI Agent 如何驾驭三大接口</h1>
+  <h2>从 Function Calling 到 Computer Use，从命令行到自然语言 — 人机交互的范式正在重写</h2>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="val">3</div><div class="lbl">接口范式</div></div>
+    <div class="hero-stat"><div class="val">MCP</div><div class="lbl">"AI 的 USB-C"</div></div>
+    <div class="hero-stat"><div class="val">$380B</div><div class="lbl">Anthropic 估值</div></div>
+    <div class="hero-stat"><div class="val">7 类</div><div class="lbl">Agent 细分赛道</div></div>
+  </div>
+</div>
+
+<!-- ====== 1. 摘要 ====== -->
+<span class="anchor" id="s1"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">1</span>摘要</h2>
+  <p>人与计算机的交互经历了 CLI → GUI → API 三次范式进化。如今 AI Agent 正在<strong>同时反向使用</strong>这三种接口：通过 <strong>Function Calling / MCP</strong> 调用 API、通过 <strong>Computer Use</strong> 操作 GUI、通过 <strong>Agentic Coding</strong> 驱动 CLI。这不是简单的"让 AI 按按钮"，而是一场关于<strong>自动化粒度、安全边界和成本效率</strong>的根本性重构。</p>
+
+  <div class="note">
+    <strong>一句话结论：</strong>API 是 Agent 的"高速公路"（最快最准），GUI 是"越野车"（哪儿都能去但慢），CLI 是"施工队"（威力大但翻车也大）。三者互补而非替代，MCP 正在成为统一它们的"USB-C 接口"。
+  </div>
+</div>
+
+<!-- ====== 2. 三大接口演进史 ====== -->
+<span class="anchor" id="s2"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">2</span>三大接口演进史</h2>
+
+  <div class="cmp">
+    <div class="cmp-s cmp-cli">
+      <div class="cmp-lb">CLI · 命令行</div>
+      <p><strong>诞生</strong>：1960s 电传打字机</p>
+      <p><strong>里程碑</strong>：Unix Shell (1971)、Bash (1989)、PowerShell (2006)</p>
+      <p><strong>本质</strong>：文本指令 → 文本结果</p>
+      <p><strong>优势</strong>：可脚本化、资源占用低、自动化友好</p>
+      <p><strong>用户</strong>：开发者、运维、高级用户</p>
+    </div>
+    <div class="cmp-s cmp-gui">
+      <div class="cmp-lb">GUI · 图形界面</div>
+      <p><strong>诞生</strong>：1963 Sketchpad</p>
+      <p><strong>里程碑</strong>：Xerox PARC (1973)、Macintosh (1984)、iPhone (2007)</p>
+      <p><strong>本质</strong>：视觉元素 + 点击/触控</p>
+      <p><strong>优势</strong>：直觉化、学习曲线平缓、发现性强</p>
+      <p><strong>用户</strong>：所有人</p>
+    </div>
+    <div class="cmp-s cmp-api">
+      <div class="cmp-lb">API · 编程接口</div>
+      <p><strong>诞生</strong>：1968 AFIPS 论文首用术语</p>
+      <p><strong>里程碑</strong>：REST (2000)、OpenAPI、GraphQL (2015)</p>
+      <p><strong>本质</strong>：结构化请求 → 结构化响应</p>
+      <p><strong>优势</strong>：精确、高速、可编程、可组合</p>
+      <p><strong>用户</strong>：程序 / 机器 / AI Agent</p>
+    </div>
+  </div>
+
+  <span class="anchor" id="s2a"></span>
+  <span class="anchor" id="s2b"></span>
+  <span class="anchor" id="s2c"></span>
+
+  <div class="cht">
+    <div class="cht-t">三大接口发展时间线</div>
+    <canvas id="cTimeline"></canvas>
+  </div>
+</div>
+
+<!-- ====== 3. AI Agent 如何驾驭三大接口 ====== -->
+<span class="anchor" id="s3"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">3</span>AI Agent 如何驾驭三大接口</h2>
+
+  <!-- 3A: API -->
+  <span class="anchor" id="s3a"></span>
+  <div class="deep" style="border-color:var(--blue);">
+    <div class="dt" style="color:var(--blue);">🔌 API 路线：Function Calling + MCP</div>
+
+    <p>AI Agent 调用 API 的方式已从"硬编码"进化为<strong>模型自主决定调用时机和参数</strong>。</p>
+
+    <h3>Function Calling 工作流（5 步）</h3>
+    <div class="flow-h">
+      <div class="flow-s">① 定义工具 (JSON Schema)</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">② 模型决定调用</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">③ 应用执行函数</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">④ 返回结果</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">⑤ 模型生成回答</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><div class="ic ic-b">🔑</div>关键特性</div>
+        <ul>
+          <li><strong>Strict Mode</strong>：保证 100% Schema 合规</li>
+          <li><strong>并行调用</strong>：一次触发多个函数</li>
+          <li><strong>Tool Search</strong>（GPT-5.4+）：从海量工具中动态检索</li>
+          <li><strong>Namespace</strong>：按领域分组工具</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-c">🔗</div>MCP — "AI 的 USB-C"</div>
+        <ul>
+          <li>Anthropic 2024.11 提出的开放标准</li>
+          <li>JSON-RPC 2.0，灵感来自 LSP</li>
+          <li><strong>2025.12 捐赠给 Linux Foundation / AAIF</strong></li>
+          <li>OpenAI、Google、Microsoft 先后采用</li>
+          <li>SDK 覆盖 10+ 编程语言</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="hbox">
+      <strong>最佳实践（OpenAI 建议）：</strong>初始提供的函数控制在 <strong>20 个以内</strong>，描述越清晰模型选择越准确。多个必须串行调用的函数应合并为一个。
+    </div>
+  </div>
+
+  <!-- 3B: GUI -->
+  <span class="anchor" id="s3b"></span>
+  <div class="deep" style="border-color:var(--purple);">
+    <div class="dt" style="color:var(--purple);">🖥️ GUI 路线：Computer Use</div>
+
+    <p>Agent <strong>像人类一样看屏幕、移鼠标、按键盘</strong>——这是最通用但也最慢的方式。</p>
+
+    <h3>工作循环</h3>
+    <div class="flow-h">
+      <div class="flow-s">截屏</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">视觉理解</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">决定操作</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">执行点击/输入</div>
+      <div class="flow-a">→</div>
+      <div class="flow-s">再截屏…循环</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><div class="ic ic-p">🎯</div>Anthropic Computer Use</div>
+        <ul>
+          <li>X11 虚拟显示 + Docker 隔离</li>
+          <li>支持移动、点击、拖拽、缩放</li>
+          <li><strong>WebArena 基准排名第一</strong>（单 Agent）</li>
+          <li>Claude Opus 4.6 / Sonnet 4.6 支持</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-o">🌐</div>浏览器 Agent 产品</div>
+        <ul>
+          <li><strong>OpenAI Operator</strong>：2025.02 发布</li>
+          <li><strong>Perplexity Comet</strong>：AI 浏览器 (2025.07)</li>
+          <li><strong>Convergence Proxy</strong>：性能超 Operator</li>
+          <li><strong>Hugging Face</strong>：开源 Operator 替代</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>局限性：</strong>坐标幻觉（点偏了）、截屏消耗大量 Vision Token（每帧 +466~499 token）、滚动不稳定、电子表格操作困难。Anthropic 自己建议"仅用于速度不敏感的任务"。
+    </div>
+  </div>
+
+  <!-- 3C: CLI -->
+  <span class="anchor" id="s3c"></span>
+  <div class="deep" style="border-color:var(--green);">
+    <div class="dt" style="color:var(--green);">⌨️ CLI 路线：Agentic Coding / Terminal 自动化</div>
+
+    <p>Agent <strong>直接执行终端命令</strong>——编辑文件、跑测试、部署代码、管理基础设施。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><div class="ic ic-g">🦀</div>代表产品</div>
+        <ul>
+          <li><strong>Claude Code</strong>：Anthropic CLI Agent，2025.05 GA</li>
+          <li><strong>Cursor</strong>：AI 代码编辑器，终端集成</li>
+          <li><strong>Cline</strong>：VS Code 内 Agent，终端执行 + 文件编辑</li>
+          <li><strong>GitHub Copilot</strong>：Agent 模式，终端命令支持</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ic ic-r">⚠️</div>翻车警示</div>
+        <ul>
+          <li><strong>Replit Agent</strong>（2025.07）：误删生产数据库</li>
+          <li><strong>Google Antigravity</strong>（2025.12）：误删用户 D: 盘</li>
+          <li>CLI 的威力 = 破坏力：<code>rm -rf</code> 不会问你"确定吗？"</li>
+          <li>必须搭配版本管理 + 沙箱 + 权限控制</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 4. 效果对比 ====== -->
+<span class="anchor" id="s4"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">4</span>效果对比</h2>
+
+  <div class="cht">
+    <div class="cht-t">三种接口的 Agent 效果雷达图</div>
+    <canvas id="cRadar"></canvas>
+  </div>
+
+  <table>
+    <thead><tr><th>维度</th><th>🔌 API (Function Calling)</th><th>🖥️ GUI (Computer Use)</th><th>⌨️ CLI (Terminal)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>准确率</strong></td><td>🟢 最高 — Strict Mode 保证 Schema 100% 合规</td><td>🟡 中 — 坐标幻觉、视觉误判</td><td>🟢 高 — 命令结构明确，但依赖环境</td></tr>
+      <tr><td><strong>速度</strong></td><td>🟢 快 — 直接调用</td><td>🔴 慢 — 每步截屏+视觉分析</td><td>🟢 快 — 直接执行</td></tr>
+      <tr><td><strong>通用性</strong></td><td>🟡 有限 — 只能用已暴露的 API</td><td>🟢 最高 — 所有桌面应用都能操作</td><td>🟡 中高 — 限于有 CLI 的系统</td></tr>
+      <tr><td><strong>安全性</strong></td><td>🟢 高 — 仅调用预定义函数</td><td>🟡 风险 — 屏幕注入攻击</td><td>🔴 危险 — 破坏性命令无确认</td></tr>
+      <tr><td><strong>Token 成本</strong></td><td>🟡 中 — 函数定义计入输入</td><td>🔴 高 — Vision 截屏计费</td><td>🟢 低 — 纯文本输入输出</td></tr>
+      <tr><td><strong>比喻</strong></td><td>高速公路 — 路线固定但极快</td><td>越野车 — 哪儿都能去但颠</td><td>施工队 — 威力大但会塌方</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cht">
+    <div class="cht-t">各维度得分对比（满分 100）</div>
+    <canvas id="cBar"></canvas>
+  </div>
+
+  <div class="hbox green">
+    <strong>核心洞察：</strong>API 方式最稳定高效，但只能用于有 API 的系统；GUI 方式解决了"无 API 的遗留系统"问题，是<strong>最后一公里方案</strong>；CLI 在开发/运维自动化领域无可替代，但翻车案例已实证其风险。<strong>未来的 Agent 将同时掌握三种接口，根据场景自动切换。</strong>
+  </div>
+</div>
+
+<!-- ====== 5. 市场接受度 ====== -->
+<span class="anchor" id="s5"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">5</span>市场接受度</h2>
+
+  <h3>5.1 行业现状（多方观点）</h3>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><div class="ic ic-g">✅</div>积极信号</div>
+      <ul>
+        <li><strong>Anthropic</strong>：3/4 企业用 Claude 做"全任务委托"</li>
+        <li><strong>IRS / FDA / 美国国防部</strong>已部署 Agentic AI</li>
+        <li><strong>软件开发</strong>被 NY Mag 和 The Information 认定为 Agent 最成功的领域</li>
+        <li>Claude Code 2025.05 GA，Cursor 用户快速增长</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="ic ic-r">⚠️</div>谨慎信号</div>
+      <ul>
+        <li><strong>AP 通信</strong>（2025.04）：实际应用案例仍为少数</li>
+        <li><strong>Fortune</strong>（2025.06）：大多数企业仍在"实验"阶段</li>
+        <li><strong>WSJ</strong>（2025.11）：获得 ROI 的企业屈指可数</li>
+        <li><strong>Gartner</strong>（2025.06）：大量项目是"Agent Washing"（把旧产品贴 Agent 标签）</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>5.2 AI Agent 七大赛道（The Information, 2025.07）</h3>
+
+  <div class="cht">
+    <div class="cht-t">七大赛道市场热度分布</div>
+    <canvas id="cSegments"></canvas>
+  </div>
+
+  <table>
+    <thead><tr><th>#</th><th>赛道</th><th>代表产品</th><th>主要接口</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>软件开发 / 编码 Agent</strong></td><td>Claude Code, Cursor, Cline, Copilot</td><td>CLI + API</td></tr>
+      <tr><td>2</td><td><strong>业务自动化 Agent</strong></td><td>Salesforce Agentforce, IBM Watson</td><td>API</td></tr>
+      <tr><td>3</td><td><strong>对话式 Agent</strong></td><td>ChatGPT, Claude, 客服 Bot</td><td>API</td></tr>
+      <tr><td>4</td><td><strong>研究 Agent</strong></td><td>OpenAI Deep Research, Perplexity</td><td>API + GUI</td></tr>
+      <tr><td>5</td><td><strong>分析 Agent</strong></td><td>数据分析/报表生成工具</td><td>API + CLI</td></tr>
+      <tr><td>6</td><td><strong>领域专用 Agent</strong></td><td>医疗/法律/金融专用</td><td>API</td></tr>
+      <tr><td>7</td><td><strong>网页浏览 Agent</strong></td><td>OpenAI Operator, Perplexity Comet</td><td>GUI</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 自主程度——对标自动驾驶</h3>
+
+  <p>Financial Times 将 Agent 自主程度类比为自动驾驶 SAE 分级：</p>
+
+  <div class="bar-g"><div class="bar-l">L1 辅助（Copilot）</div><div class="bar-w"><div class="bar-f" style="width:90%;background:var(--green);">市场主流</div></div></div>
+  <div class="bar-g"><div class="bar-l">L2-3 部分/有条件自动</div><div class="bar-w"><div class="bar-f" style="width:60%;background:var(--blue);">多数 Agent 产品</div></div></div>
+  <div class="bar-g"><div class="bar-l">L4 高度自主</div><div class="bar-w"><div class="bar-f" style="width:20%;background:var(--accent);">少数特化场景</div></div></div>
+  <div class="bar-g"><div class="bar-l">L5 完全自主</div><div class="bar-w"><div class="bar-f" style="width:3%;background:var(--red);">理论阶段</div></div></div>
+</div>
+
+<!-- ====== 6. 产品版图 ====== -->
+<span class="anchor" id="s6"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">6</span>产品版图</h2>
+
+  <h3>6.1 API / Function Calling 生态</h3>
+  <table>
+    <thead><tr><th>公司</th><th>产品</th><th>核心特性</th></tr></thead>
+    <tbody>
+      <tr><td><strong>OpenAI</strong></td><td>GPT-5 / 4.1 Function Calling</td><td>JSON Schema, Strict Mode, Tool Search, Namespace, 并行调用</td></tr>
+      <tr><td><strong>Anthropic</strong></td><td>MCP (Model Context Protocol)</td><td>JSON-RPC 2.0, 开放标准, AAIF 捐赠, 10+ 语言 SDK</td></tr>
+      <tr><td><strong>Google</strong></td><td>Agent2Agent, Vertex AI</td><td>Agent 间通信协议, 云端 AI 平台</td></tr>
+      <tr><td><strong>Microsoft</strong></td><td>Azure OpenAI, Copilot</td><td>MCP 采纳, Copilot 全家桶集成</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 GUI / Computer Use 生态</h3>
+  <table>
+    <thead><tr><th>公司</th><th>产品</th><th>核心特性</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Anthropic</strong></td><td>Computer Use (Claude)</td><td>截屏+鼠标/键盘, WebArena SOTA, Docker 隔离</td></tr>
+      <tr><td><strong>OpenAI</strong></td><td>Operator</td><td>浏览器 Agent, 2025.02 发布</td></tr>
+      <tr><td><strong>Perplexity</strong></td><td>Comet</td><td>AI 浏览器, 2025.07 发布</td></tr>
+      <tr><td><strong>ByteDance</strong></td><td>豆包 (Doubao)</td><td>手机 OS 级别 Agent（隐私争议）</td></tr>
+      <tr><td><strong>Hugging Face</strong></td><td>开源浏览器 Agent</td><td>免费 Operator 替代方案</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 CLI / Coding Agent 生态</h3>
+  <table>
+    <thead><tr><th>公司</th><th>产品</th><th>核心特性</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Anthropic</strong></td><td>Claude Code + Cowork</td><td>CLI Agent GA, VS Code / JetBrains 集成, GitHub Actions</td></tr>
+      <tr><td><strong>Anysphere</strong></td><td>Cursor</td><td>AI 代码编辑器, 终端集成, Agent 模式</td></tr>
+      <tr><td><strong>Cline</strong></td><td>Cline</td><td>VS Code 扩展, 终端执行, MCP, 费用追踪</td></tr>
+      <tr><td><strong>OpenAI</strong></td><td>Codex</td><td>AI 编码 Agent</td></tr>
+      <tr><td><strong>GitHub</strong></td><td>Copilot (Agent 模式)</td><td>多文件编辑, 终端集成, MCP 支持</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cht">
+    <div class="cht-t">各接口赛道代表产品能力雷达</div>
+    <canvas id="cProducts"></canvas>
+  </div>
+</div>
+
+<!-- ====== 7. 发展趋势 ====== -->
+<span class="anchor" id="s7"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">7</span>2025-2026 发展趋势</h2>
+
+  <div class="grid2">
+    <div class="card" style="border-top:3px solid var(--blue);">
+      <div class="card-h"><div class="ic ic-b">🔗</div>趋势 1：MCP 成为事实标准</div>
+      <p>Anthropic 提出 → OpenAI 采纳 → Google 跟进 → <strong>2025.12 捐赠给 Linux Foundation</strong>。Ars Technica 称之为"AI 的 USB-C"。Agent 的工具生态开始走向统一。</p>
+      <div class="tags"><span class="tag t-b">MCP</span><span class="tag t-c">AAIF</span></div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--purple);">
+      <div class="card-h"><div class="ic ic-p">🖥️</div>趋势 2：GUI Agent 走向主流</div>
+      <p>Anthropic Computer Use、OpenAI Operator、Perplexity Comet、字节豆包——<strong>让 AI 操作没有 API 的软件</strong>正在从 demo 变为产品。Windows 11 已内置后台 AI Agent 能力。</p>
+      <div class="tags"><span class="tag t-p">Computer Use</span><span class="tag t-o">Operator</span></div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green);">
+      <div class="card-h"><div class="ic ic-g">⌨️</div>趋势 3：编码 Agent 率先变现</div>
+      <p>软件开发被广泛认定为 Agent <strong>最成功的落地场景</strong>。Claude Code GA、Cursor 增长、Cline Teams $20/月——CLI 路线率先跑出了商业模型。</p>
+      <div class="tags"><span class="tag t-g">Coding Agent</span><span class="tag t-b">商业化</span></div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--accent);">
+      <div class="card-h"><div class="ic ic-o">🧠</div>趋势 4：多 Agent 协议涌现</div>
+      <p><strong>Agent2Agent</strong>（Google）、<strong>AGNTCY</strong>（Cisco/LangChain）、<strong>GibberLink</strong>——Agent 不只是和人交互，还开始互相对话。多 Agent 编排将催生新的中间件市场。</p>
+      <div class="tags"><span class="tag t-o">A2A</span><span class="tag t-c">Multi-Agent</span></div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--cyan);">
+      <div class="card-h"><div class="ic ic-c">🗣️</div>趋势 5：自然语言成为新接口层</div>
+      <p>CLI/GUI/API 之上正在形成第四层接口：<strong>自然语言</strong>。用户说"帮我查上周销售数据"，Agent 自行决定走 API 还是 GUI 还是 CLI。"接口选择"本身正在被自动化。</p>
+      <div class="tags"><span class="tag t-c">NLI</span><span class="tag t-b">范式转变</span></div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--red);">
+      <div class="card-h"><div class="ic ic-r">🛡️</div>趋势 6：安全框架正在追赶</div>
+      <p><strong>OWASP Top 10 for Agentic Applications 2026</strong>、MITRE ATLAS、CSA MAESTRO——安全社区正紧追 Agent 的扩展速度。MCP 的 prompt injection 和 tool poisoning 攻击已被报告。</p>
+      <div class="tags"><span class="tag t-o">OWASP</span><span class="tag t-p">安全</span></div>
+    </div>
+  </div>
+
+  <div class="cht">
+    <div class="cht-t">三大接口 Agent 采用率增长趋势（预估）</div>
+    <canvas id="cTrend"></canvas>
+  </div>
+</div>
+
+<!-- ====== 8. 结论 ====== -->
+<span class="anchor" id="s8"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">8</span>结论</h2>
+
+  <div class="hbox green">
+    <strong>核心判断：</strong>API、GUI、CLI 三种接口不是此消彼长的关系，而是 Agent 工具箱中的三件不同武器。<strong>API 是主力（快、准、便宜），GUI 是兜底（通用但慢），CLI 是重器（威力大但危险）</strong>。2026 年的竞争焦点已从"能不能做 Agent"转向"谁的 Agent 更便宜、更安全、运营更持久"。
+  </div>
+
+  <div class="grid3">
+    <div class="card" style="border-top:3px solid var(--blue);">
+      <div class="card-h"><div class="ic ic-b">🔌</div>API 的未来</div>
+      <p>MCP 正在统一工具生态，Tool Search 允许挂载数千个工具。<strong>API 将成为 Agent 的"神经系统"</strong>——永远是首选路径。</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--purple);">
+      <div class="card-h"><div class="ic ic-p">🖥️</div>GUI 的未来</div>
+      <p>从 demo 进入产品化，但坐标精度和 Token 成本仍是瓶颈。<strong>"最后一公里方案"</strong>——填补 API 覆盖不到的空白。</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green);">
+      <div class="card-h"><div class="ic ic-g">⌨️</div>CLI 的未来</div>
+      <p>编码 Agent 率先变现证明了 CLI 路线的商业价值。沙箱 + 权限控制 + 版本管理将成为标配。<strong>"高风险高回报"赛道</strong>。</p>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:24px;">
+    <strong>最终判断：</strong>自然语言正在成为三大接口之上的"元接口"。用户不需要知道 Agent 走的是 API、GUI 还是 CLI——<strong>说一句话，剩下的交给 Agent 自己选择路径</strong>。这是人机交互 60 年来最根本的一次范式转变。
+  </div>
+</div>
+
+<!-- ====== 参考引用 ====== -->
+<span class="anchor" id="refs"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">📚</span>参考引用</h2>
+
+  <table>
+    <thead><tr><th>#</th><th>来源</th><th>标题 / 说明</th><th>链接</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Wikipedia</td><td>Application Programming Interface</td><td><a href="https://en.wikipedia.org/wiki/API" style="color:var(--pri);">en.wikipedia.org/wiki/API</a></td></tr>
+      <tr><td>2</td><td>Wikipedia</td><td>Graphical User Interface</td><td><a href="https://en.wikipedia.org/wiki/Graphical_user_interface" style="color:var(--pri);">en.wikipedia.org/wiki/GUI</a></td></tr>
+      <tr><td>3</td><td>Wikipedia</td><td>Command-line Interface</td><td><a href="https://en.wikipedia.org/wiki/Command-line_interface" style="color:var(--pri);">en.wikipedia.org/wiki/CLI</a></td></tr>
+      <tr><td>4</td><td>OpenAI Developers</td><td>Function Calling Guide</td><td><a href="https://platform.openai.com/docs/guides/function-calling" style="color:var(--pri);">platform.openai.com/docs/guides/function-calling</a></td></tr>
+      <tr><td>5</td><td>Anthropic</td><td>Computer Use Tool Documentation</td><td><a href="https://docs.anthropic.com/en/docs/agents-and-tools/computer-use" style="color:var(--pri);">docs.anthropic.com/.../computer-use</a></td></tr>
+      <tr><td>6</td><td>Wikipedia</td><td>Model Context Protocol (MCP)</td><td><a href="https://en.wikipedia.org/wiki/Model_Context_Protocol" style="color:var(--pri);">en.wikipedia.org/wiki/MCP</a></td></tr>
+      <tr><td>7</td><td>modelcontextprotocol.io</td><td>MCP 官方文档</td><td><a href="https://modelcontextprotocol.io/" style="color:var(--pri);">modelcontextprotocol.io</a></td></tr>
+      <tr><td>8</td><td>Wikipedia</td><td>AI Agent — 应用、市场、安全</td><td><a href="https://en.wikipedia.org/wiki/AI_agent" style="color:var(--pri);">en.wikipedia.org/wiki/AI_agent</a></td></tr>
+      <tr><td>9</td><td>Ars Technica</td><td>"MCP: AI 的 USB-C" (2025.04)</td><td><a href="https://arstechnica.com/" style="color:var(--pri);">arstechnica.com</a></td></tr>
+      <tr><td>10</td><td>The Information</td><td>AI Agent 七大类型分类 (2025.07)</td><td><a href="https://www.theinformation.com/" style="color:var(--pri);">theinformation.com</a></td></tr>
+      <tr><td>11</td><td>Financial Times</td><td>Agent 自主程度 SAE 分级类比</td><td><a href="https://www.ft.com/" style="color:var(--pri);">ft.com</a></td></tr>
+      <tr><td>12</td><td>Wikipedia</td><td>Anthropic — Claude Code, 估值, 发展</td><td><a href="https://en.wikipedia.org/wiki/Anthropic" style="color:var(--pri);">en.wikipedia.org/wiki/Anthropic</a></td></tr>
+      <tr><td>13</td><td>OWASP</td><td>Top 10 for Agentic Applications 2026</td><td><a href="https://owasp.org/" style="color:var(--pri);">owasp.org</a></td></tr>
+      <tr><td>14</td><td>Gartner</td><td>"Agent Washing" 现象报告 (2025.06)</td><td><a href="https://www.gartner.com/" style="color:var(--pri);">gartner.com</a></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</main>
+
+<div class="footer">
+  <p>本报告基于公开资料、官方文档及行业分析整理，供技术参考使用。</p>
+  <p>数据来源：OpenAI · Anthropic · Google · Wikipedia · The Information · Ars Technica · Financial Times | 制作日期：2026 年 4 月</p>
+</div>
+
+<button class="stt" id="stt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+window.addEventListener('scroll',()=>{document.getElementById('stt').style.display=window.scrollY>400?'block':'none';});
+const tocLinks=document.querySelectorAll('.toc a');
+const anchors=document.querySelectorAll('.anchor');
+window.addEventListener('scroll',()=>{let c='';anchors.forEach(a=>{if(window.scrollY>=a.offsetTop-100)c=a.id;});tocLinks.forEach(a=>{a.classList.remove('on');if(a.getAttribute('href')==='#'+c)a.classList.add('on');});});
+tocLinks.forEach(a=>a.addEventListener('click',()=>{if(window.innerWidth<=860)document.querySelector('.toc').classList.remove('open');}));
+
+const B='#3b82f6',R='#ef4444',G='#10b981',P='#8b5cf6',O='#f97316',C='#06b6d4',T='#14b8a6';
+
+/* Timeline bar chart */
+new Chart(document.getElementById('cTimeline'),{
+  type:'bar',
+  data:{
+    labels:['CLI (1964)','GUI (1973)','Web API (2000)','REST (2005)','iPhone 触控 (2007)','Function Calling (2023)','MCP (2024)','Computer Use (2024)'],
+    datasets:[{
+      label:'时间线',
+      data:[1964,1973,2000,2005,2007,2023,2024,2024],
+      backgroundColor:[G,P,B,B,P,B,C,P],
+      borderRadius:6
+    }]
+  },
+  options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{min:1960,max:2026,title:{display:true,text:'年份'}}}}
+});
+
+/* Radar chart */
+new Chart(document.getElementById('cRadar'),{
+  type:'radar',
+  data:{
+    labels:['准确率','速度','通用性','安全性','Token 效率','易调试性'],
+    datasets:[
+      {label:'API (Function Calling)',data:[95,90,50,90,70,85],borderColor:B,backgroundColor:'rgba(59,130,246,.12)',pointBackgroundColor:B},
+      {label:'GUI (Computer Use)',data:[55,25,95,50,30,40],borderColor:P,backgroundColor:'rgba(139,92,246,.12)',pointBackgroundColor:P},
+      {label:'CLI (Terminal)',data:[80,85,70,35,90,75],borderColor:G,backgroundColor:'rgba(16,185,129,.12)',pointBackgroundColor:G}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:16}}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20}}}}
+});
+
+/* Bar comparison */
+new Chart(document.getElementById('cBar'),{
+  type:'bar',
+  data:{
+    labels:['准确率','速度','通用性','安全性','Token 效率','易调试性'],
+    datasets:[
+      {label:'API',data:[95,90,50,90,70,85],backgroundColor:B,borderRadius:4},
+      {label:'GUI',data:[55,25,95,50,30,40],backgroundColor:P,borderRadius:4},
+      {label:'CLI',data:[80,85,70,35,90,75],backgroundColor:G,borderRadius:4}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,max:100}}}
+});
+
+/* 7 segments donut */
+new Chart(document.getElementById('cSegments'),{
+  type:'doughnut',
+  data:{
+    labels:['编码 Agent','业务自动化','对话式','研究','分析','领域专用','浏览器 Agent'],
+    datasets:[{data:[28,18,16,12,10,9,7],backgroundColor:[G,B,C,P,O,T,R]}]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}}}
+});
+
+/* Products radar */
+new Chart(document.getElementById('cProducts'),{
+  type:'radar',
+  data:{
+    labels:['API 能力','GUI 能力','CLI 能力','安全性','生态成熟度','企业适配'],
+    datasets:[
+      {label:'OpenAI (GPT-5 + Operator)',data:[95,70,60,80,90,85],borderColor:B,backgroundColor:'rgba(59,130,246,.1)',pointBackgroundColor:B},
+      {label:'Anthropic (Claude + Computer Use + Code)',data:[90,85,90,75,80,75],borderColor:O,backgroundColor:'rgba(249,115,22,.1)',pointBackgroundColor:O},
+      {label:'Cursor / Cline (编码优先)',data:[70,30,95,60,65,55],borderColor:G,backgroundColor:'rgba(16,185,129,.1)',pointBackgroundColor:G},
+      {label:'Google (Agent2Agent + Vertex)',data:[85,50,40,80,75,90],borderColor:R,backgroundColor:'rgba(239,68,68,.1)',pointBackgroundColor:R}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20}}}}
+});
+
+/* Adoption trend */
+new Chart(document.getElementById('cTrend'),{
+  type:'line',
+  data:{
+    labels:['2023 H1','2023 H2','2024 H1','2024 H2','2025 H1','2025 H2','2026 H1'],
+    datasets:[
+      {label:'API (Function Calling)',data:[15,30,50,65,78,85,92],borderColor:B,backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.3,pointBackgroundColor:B,pointRadius:5},
+      {label:'CLI (Agentic Coding)',data:[5,10,20,35,50,65,78],borderColor:G,backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.3,pointBackgroundColor:G,pointRadius:5},
+      {label:'GUI (Computer Use)',data:[0,2,5,12,22,35,48],borderColor:P,backgroundColor:'rgba(139,92,246,.08)',fill:true,tension:.3,pointBackgroundColor:P,pointRadius:5}
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'采用率 (%，预估)'}}}}
+});
+</script>
+
+</body>
+</html>

@@ -156,14 +156,19 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
   <a href="#s4">4. Hermes 架构</a>
   <a href="#s4a" class="sub">└ 单 Agent 模型</a>
   <a href="#s4b" class="sub">└ 工作流程</a>
-  <a href="#s5">5. 关键差异</a>
-  <a href="#s5a" class="sub">└ 调度层级</a>
-  <a href="#s5b" class="sub">└ Agent 生命周期</a>
-  <a href="#s5c" class="sub">└ 推理位置</a>
-  <a href="#s6">6. 横向对比表</a>
-  <a href="#s7">7. 常见误解辨析</a>
-  <a href="#s8">8. 适用场景</a>
-  <a href="#s9">9. 一句话点睛</a>
+  <a href="#s5">5. 两层 Gateway 视角 ⭐</a>
+  <a href="#s5a" class="sub">└ 拆词：gateway 指两件事</a>
+  <a href="#s5b" class="sub">└ OpenClaw 两层图</a>
+  <a href="#s5c" class="sub">└ Hermes 一层图</a>
+  <a href="#s5d" class="sub">└ 根本原因：进程数</a>
+  <a href="#s6">6. 关键差异</a>
+  <a href="#s6a" class="sub">└ 调度层级</a>
+  <a href="#s6b" class="sub">└ Agent 生命周期</a>
+  <a href="#s6c" class="sub">└ 推理位置</a>
+  <a href="#s7">7. 横向对比表</a>
+  <a href="#s8">8. 常见误解辨析</a>
+  <a href="#s9">9. 适用场景</a>
+  <a href="#s10">10. 一句话点睛</a>
 </nav>
 
 <!-- MAIN -->
@@ -335,13 +340,119 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
   <p>没有上层调度器——LLM 在推理循环里自己判断要不要调技能、调工具、查记忆，或者临时<strong>spawn 一个子 agent</strong> 来分担任务。子 agent 用完即销毁，不常驻。</p>
 </div>
 
-<!-- ====== 5. 关键差异 ====== -->
+<!-- ====== 5. 两层 Gateway 视角 ====== -->
 <span class="anchor" id="s5"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">5</span>关键差异</h2>
+  <h2 class="stitle"><span class="n">5</span>两层 Gateway 视角 ⭐</h2>
+
+  <div class="hbox amber">
+    <strong>💡 这是理解两个项目最关键的一节。</strong>"gateway" 这个词在两个项目里指的<strong>不是同一件事</strong>——拆开看，OpenClaw 其实是<strong>两层 gateway 叠在一起</strong>，Hermes 只有其中一层。
+  </div>
 
   <span class="anchor" id="s5a"></span>
-  <h3>5.1 调度层级：架构调度 vs 推理调度</h3>
+  <h3>5.1 先把 "gateway" 拆成两件事</h3>
+
+  <table>
+    <thead><tr><th>层</th><th>干啥</th><th>关键词</th></tr></thead>
+    <tbody>
+      <tr><td><strong>① 接入层 Ingress</strong></td><td>让外部消息进得来（Telegram / Discord / HTTP / WebUI / Cron → 内部）</td><td>协议转换</td></tr>
+      <tr><td><strong>② 调度层 Dispatch</strong></td><td>决定"这个任务给谁干"（→ 哪个 agent / 哪个 skill）</td><td>任务路由</td></tr>
+    </tbody>
+  </table>
+
+  <p>套到两个项目上：</p>
+
+  <table>
+    <thead><tr><th></th><th>接入层</th><th>调度层</th></tr></thead>
+    <tbody>
+      <tr><td><strong>OpenClaw</strong></td><td>✅ 有（多通道入口）</td><td>✅ 有（Gateway RPC <code>:18789</code>）</td></tr>
+      <tr><td><strong>Hermes</strong></td><td>✅ 有（<code>hermes gateway</code> 命令）</td><td>❌ 无（LLM 推理自己当调度）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hbox">
+    <strong>结论：</strong>OpenClaw 确实是<strong>"两层 gateway"</strong>，Hermes 只有<strong>"一层 gateway + 一个会自己派单的 LLM"</strong>。
+  </div>
+
+  <span class="anchor" id="s5b"></span>
+  <h3>5.2 OpenClaw — 两层 gateway 叠加</h3>
+
+  <div class="ascii">   📱 IM (Telegram/Discord)   🌐 HTTP API   ⏰ Cron   💻 WebUI
+        │              │              │           │
+        └──────┬───────┴──────┬───────┴───────────┘
+               │              │
+               ▼              ▼
+   <span class="hl-d">┌────────────────────────────────────────────┐</span>
+   <span class="hl-d">│</span>  <span class="hl-i">① 接入层 Gateway (Ingress)</span>                 <span class="hl-d">│</span>   <span class="hl-w">← Hermes 也有这层</span>
+   <span class="hl-d">│</span>  · 把各种协议统一成内部消息                  <span class="hl-d">│</span>
+   <span class="hl-d">│</span>  · 通道注册 / 状态管理 (channels.status)    <span class="hl-d">│</span>
+   <span class="hl-d">└─────────────────────┬──────────────────────┘</span>
+                         │ 标准化后的请求
+                         ▼
+   <span class="hl-d">┌────────────────────────────────────────────┐</span>
+   <span class="hl-d">│</span>  <span class="hl-w">② 调度层 Gateway (Dispatch / RPC :18789)</span>   <span class="hl-d">│</span>   <span class="hl-r">← Hermes 没有这层</span>
+   <span class="hl-d">│</span>  · 决定派给哪个 agent                       <span class="hl-d">│</span>
+   <span class="hl-d">│</span>  · sessions.spawn / agents.create / cron…  <span class="hl-d">│</span>
+   <span class="hl-d">└──┬──────────┬──────────┬──────────┬────────┘</span>
+      ▼          ▼          ▼          ▼
+   <span class="hl-g">┌─────┐</span>    <span class="hl-g">┌─────┐</span>     <span class="hl-c">┌─────┐</span>     <span class="hl-r">┌─────┐</span>
+   <span class="hl-g">│Agt 1│</span>    <span class="hl-g">│Agt 2│</span>     <span class="hl-c">│Agt 3│</span>     <span class="hl-r">│Agt 4│</span>
+   <span class="hl-g">│ LLM │</span>    <span class="hl-g">│ LLM │</span>     <span class="hl-c">│ LLM │</span>     <span class="hl-r">│ LLM │</span>
+   <span class="hl-g">└─────┘</span>    <span class="hl-g">└─────┘</span>     <span class="hl-c">└─────┘</span>     <span class="hl-r">└─────┘</span>
+   常驻       常驻        常驻        常驻</div>
+
+  <span class="anchor" id="s5c"></span>
+  <h3>5.3 Hermes — 只有接入层，调度被吸进 LLM 里</h3>
+
+  <div class="ascii">   📱 IM        🌐 HTTP API :8642     💻 WebUI :9119
+       │              │                   │
+       └──────┬───────┴───────────────────┘
+              │
+              ▼
+   <span class="hl-d">┌────────────────────────────────────────────┐</span>
+   <span class="hl-d">│</span>  <span class="hl-i">① 接入层 Gateway (hermes gateway 命令)</span>      <span class="hl-d">│</span>   <span class="hl-g">← 和 OpenClaw 同名同职</span>
+   <span class="hl-d">│</span>  · 协议转换 / 消息标准化                    <span class="hl-d">│</span>
+   <span class="hl-d">└─────────────────────┬──────────────────────┘</span>
+                         │
+                         ▼
+   <span class="hl-r">┌────────────────────────────────────────────┐</span>
+   <span class="hl-r">│</span>  <span class="hl-r">❌ 没有独立的调度层 Gateway</span>                 <span class="hl-r">│</span>
+   <span class="hl-r">│</span>     ↓ 调度被压扁进了下面这个 LLM 推理里      <span class="hl-r">│</span>
+   <span class="hl-r">├────────────────────────────────────────────┤</span>
+   <span class="hl-r">│</span>  <span class="hl-i">Hermes Main Agent</span>                          <span class="hl-r">│</span>
+   <span class="hl-r">│</span>  <span class="hl-d">┌──────────────────────────────────────┐</span>  <span class="hl-r">│</span>
+   <span class="hl-r">│</span>  <span class="hl-d">│</span>  <span class="hl-w">LLM 推理循环 (= 调度 + 推理合一)</span>     <span class="hl-d">│</span>  <span class="hl-r">│</span>
+   <span class="hl-r">│</span>  <span class="hl-d">│</span>  思考 → tool_call → 观察 → 再思考     <span class="hl-d">│</span>  <span class="hl-r">│</span>
+   <span class="hl-r">│</span>  <span class="hl-d">└──┬───────┬──────┬──────┬─────────────┘</span>  <span class="hl-r">│</span>
+   <span class="hl-r">│</span>     ▼       ▼      ▼      ▼               <span class="hl-r">│</span>
+   <span class="hl-r">│</span>  <span class="hl-g">[skill]</span> <span class="hl-c">[tool]</span> <span class="hl-b">[mem]</span> <span class="hl-w">[sub-agent 临时]</span>     <span class="hl-r">│</span>
+   <span class="hl-r">└────────────────────────────────────────────┘</span></div>
+
+  <span class="anchor" id="s5d"></span>
+  <h3>5.4 根本原因：进程数量决定了要几层 gateway</h3>
+
+  <table>
+    <thead><tr><th>问题</th><th>答案</th></tr></thead>
+    <tbody>
+      <tr><td>OpenClaw 是不是也有 Hermes 那种 gateway？</td><td><strong>是</strong>，就是图里的 ① <strong>接入层</strong></td></tr>
+      <tr><td>OpenClaw 的"独家"在哪？</td><td>在 ① 之上又加了 ② <strong>调度层 Gateway</strong></td></tr>
+      <tr><td>Hermes 为啥不需要 ②？</td><td>它把 ② 的活<strong>塞进了 LLM 的推理循环</strong>里，省掉一层独立组件</td></tr>
+      <tr><td>那 OpenClaw 为啥不也这么干？</td><td>它要管<strong>多个常驻 agent 进程</strong>——LLM 自己派单只能在自己进程内派，<strong>跨进程</strong>派单必须有个外部调度者</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hbox green">
+    <strong>一句话锁死：</strong>两层 vs 一层的根本原因 = <strong>进程数量</strong>。<strong>跨进程必须有外部调度</strong>（OpenClaw 的 ② 调度层 Gateway）；<strong>单进程 LLM 自己就能调</strong>（Hermes 把调度内嵌在推理里）。
+  </div>
+</div>
+
+<!-- ====== 6. 关键差异 ====== -->
+<span class="anchor" id="s6"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">6</span>关键差异</h2>
+
+  <span class="anchor" id="s6a"></span>
+  <h3>6.1 调度层级：架构调度 vs 推理调度</h3>
 
   <div class="cmp">
     <div class="cmp-s cmp-old">
@@ -354,8 +465,8 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
     </div>
   </div>
 
-  <span class="anchor" id="s5b"></span>
-  <h3>5.2 Agent 生命周期：常驻员工 vs 临时零工</h3>
+  <span class="anchor" id="s6b"></span>
+  <h3>6.2 Agent 生命周期：常驻员工 vs 临时零工</h3>
 
   <table>
     <thead><tr><th>维度</th><th>OpenClaw</th><th>Hermes</th></tr></thead>
@@ -367,8 +478,8 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
     </tbody>
   </table>
 
-  <span class="anchor" id="s5c"></span>
-  <h3>5.3 推理位置：分散 vs 集中</h3>
+  <span class="anchor" id="s6c"></span>
+  <h3>6.3 推理位置：分散 vs 集中</h3>
 
   <div class="hbox green">
     <strong>OpenClaw：</strong>"推理"分散在每个 agent 内部，Gateway 只负责"调度不推理"。<br>
@@ -377,9 +488,9 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
 </div>
 
 <!-- ====== 6. 横向对比表 ====== -->
-<span class="anchor" id="s6"></span>
+<span class="anchor" id="s7"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">6</span>横向对比表</h2>
+  <h2 class="stitle"><span class="n">7</span>横向对比表</h2>
 
   <table>
     <thead>
@@ -401,9 +512,9 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
 </div>
 
 <!-- ====== 7. 常见误解辨析 ====== -->
-<span class="anchor" id="s7"></span>
+<span class="anchor" id="s8"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">7</span>常见误解辨析</h2>
+  <h2 class="stitle"><span class="n">8</span>常见误解辨析</h2>
 
   <div class="grid2">
     <div class="card">
@@ -430,9 +541,9 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
 </div>
 
 <!-- ====== 8. 适用场景 ====== -->
-<span class="anchor" id="s8"></span>
+<span class="anchor" id="s9"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">8</span>适用场景</h2>
+  <h2 class="stitle"><span class="n">9</span>适用场景</h2>
 
   <div class="grid2">
     <div class="card">
@@ -467,9 +578,9 @@ tbody td code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12p
 </div>
 
 <!-- ====== 9. 一句话点睛 ====== -->
-<span class="anchor" id="s9"></span>
+<span class="anchor" id="s10"></span>
 <div class="sec">
-  <h2 class="stitle"><span class="n">9</span>一句话点睛</h2>
+  <h2 class="stitle"><span class="n">10</span>一句话点睛</h2>
 
   <div class="deep">
     <div class="dt">🎯 以后看到这两个名字就这么想</div>

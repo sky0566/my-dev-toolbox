@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIPI M-PHY 5.0 (HS-G5) 新特性 — Seminar 讲义</title>
+<style>
+:root{
+  --pri:#6366f1; --dark:#0f172a; --gray:#1e293b;
+  --red:#ef4444; --blue:#3b82f6; --green:#10b981; --purple:#8b5cf6;
+  --accent:#f97316; --cyan:#06b6d4; --light:#f8fafc;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;background:var(--light);color:#334155;line-height:1.8;}
+
+.topnav{position:fixed;top:0;left:0;right:0;height:56px;background:var(--dark);display:flex;align-items:center;padding:0 28px;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,.4);}
+.topnav .logo{display:flex;align-items:center;gap:10px;}
+.topnav .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--pri),var(--cyan));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:900;}
+.topnav .logo-text{color:#fff;font-size:15px;font-weight:700;}
+.topnav .logo-text em{color:var(--cyan);font-style:normal;}
+.topnav .spacer{flex:1;}
+.topnav .badge{background:rgba(6,182,212,.15);border:1px solid rgba(6,182,212,.3);color:#67e8f9;padding:3px 12px;border-radius:16px;font-size:11px;font-weight:600;}
+.topnav .date{color:rgba(255,255,255,.4);font-size:12px;margin-left:16px;}
+.toc-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;margin-right:12px;}
+
+.toc{position:fixed;top:56px;left:0;bottom:0;width:230px;background:#fff;border-right:1px solid #e2e8f0;overflow-y:auto;z-index:900;padding:16px 0;transition:transform .3s;}
+.toc h4{padding:0 16px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:10px;}
+.toc a{display:block;padding:6px 16px;color:#64748b;text-decoration:none;font-size:12px;border-left:3px solid transparent;transition:all .15s;}
+.toc a:hover,.toc a.on{background:rgba(99,102,241,.06);color:var(--pri);border-left-color:var(--pri);}
+.toc a.sub{padding-left:28px;font-size:11px;color:#94a3b8;}
+
+.main{margin-left:230px;margin-top:56px;padding:32px 40px 80px;max-width:1080px;}
+@media(max-width:860px){
+  .toc{transform:translateX(-100%);}.toc.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2);}
+  .main{margin-left:0;padding:18px 12px 60px;}.toc-btn{display:block;}
+  .grid2,.grid3{grid-template-columns:1fr!important;}
+  .hero{padding:32px 18px!important;}.hero h1{font-size:22px!important;}
+  .footer{margin-left:0;}
+}
+
+.hero{background:linear-gradient(135deg,#0c1a3a 0%,var(--dark) 45%,#083344 100%);border-radius:16px;padding:52px 48px;color:#fff;margin-bottom:40px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-80px;right:-60px;width:400px;height:400px;background:radial-gradient(circle,rgba(6,182,212,.22) 0%,transparent 70%);border-radius:50%;}
+.hero::after{content:'';position:absolute;bottom:-120px;left:20%;width:500px;height:500px;background:radial-gradient(circle,rgba(99,102,241,.14) 0%,transparent 70%);border-radius:50%;}
+.hero>*{position:relative;z-index:1;}
+.hero .eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:8px;}
+.hero h1{font-size:28px;margin-bottom:6px;line-height:1.3;}
+.hero h2{font-size:16px;font-weight:400;opacity:.7;margin-bottom:28px;}
+.hero-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hero-stat{text-align:center;}.hero-stat .val{font-size:26px;font-weight:800;color:var(--cyan);}.hero-stat .lbl{font-size:11px;opacity:.6;margin-top:2px;}
+
+.sec{margin-bottom:44px;}
+.anchor{display:block;position:relative;top:-80px;visibility:hidden;}
+h2.stitle{font-size:20px;color:var(--dark);margin-bottom:18px;padding-bottom:10px;border-bottom:3px solid var(--pri);display:flex;align-items:center;gap:10px;}
+h2.stitle .n{background:var(--pri);color:#fff;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+h3{font-size:16px;color:var(--dark);margin:24px 0 10px;}
+h4{font-size:14px;color:#475569;margin:18px 0 8px;}
+p{margin-bottom:10px;color:#475569;font-size:14px;}
+ul,ol{margin:8px 0 14px 20px;color:#475569;font-size:13.5px;}
+li{margin-bottom:4px;}
+code{background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12.5px;color:#6366f1;font-family:'Cascadia Code','Fira Code',monospace;}
+strong{color:var(--dark);}
+
+.card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.04);border:1px solid #e2e8f0;margin-bottom:16px;}
+.card-h{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.card-h .ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ic-r{background:rgba(239,68,68,.12);color:var(--red);}
+.ic-b{background:rgba(59,130,246,.12);color:var(--blue);}
+.ic-g{background:rgba(16,185,129,.12);color:var(--green);}
+.ic-p{background:rgba(139,92,246,.12);color:var(--purple);}
+.ic-o{background:rgba(249,115,22,.12);color:var(--accent);}
+.ic-c{background:rgba(6,182,212,.12);color:var(--cyan);}
+.star{background:linear-gradient(135deg,#fff7ed,#fff);border-color:#fed7aa;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0;}
+
+table{width:100%;border-collapse:collapse;margin:12px 0 18px;font-size:13px;}
+thead th{background:var(--dark);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:12px;}
+thead th:first-child{border-radius:8px 0 0 0;}thead th:last-child{border-radius:0 8px 0 0;}
+tbody td{padding:8px 12px;border-bottom:1px solid #e2e8f0;vertical-align:top;}
+tbody tr:hover{background:#f8fafc;}
+tbody tr.hi td{background:#eef2ff;}
+tbody tr.hi:hover td{background:#e0e7ff;}
+
+.note{border-left:4px solid var(--accent);background:linear-gradient(135deg,#fffbeb,#fff);border-radius:0 10px 10px 0;padding:14px 18px;margin:14px 0;font-size:13.5px;color:#555;}
+.hbox{border:1px solid #c7d2fe;background:linear-gradient(135deg,#eef2ff,#fff);border-radius:10px;padding:14px 18px;margin:14px 0;font-size:13.5px;}
+.hbox.green{background:linear-gradient(135deg,#ecfdf5,#fff);border-color:#a7f3d0;}
+.hbox.cyan{background:linear-gradient(135deg,#ecfeff,#fff);border-color:#a5f3fc;}
+
+.pc-h{font-size:12px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.pc.pro{background:linear-gradient(135deg,#ecfdf5,#fff);border:1px solid #a7f3d0;border-radius:10px;padding:14px 16px;}
+.pc.con{background:linear-gradient(135deg,#fef2f2,#fff);border:1px solid #fecaca;border-radius:10px;padding:14px 16px;}
+.pc ul{margin:0 0 0 16px;font-size:13px;}
+.pc.pro .pc-h{color:#059669;}
+.pc.con .pc-h{color:#dc2626;}
+
+.bdg{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.bdg-r{background:#fef2f2;color:#dc2626;}.bdg-y{background:#fffbeb;color:#d97706;}
+.bdg-b{background:#eff6ff;color:#2563eb;}.bdg-g{background:#ecfdf5;color:#059669;}
+.bdg-c{background:#ecfeff;color:#0891b2;}
+
+.flow-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin:16px 0;}
+.flow-s{background:linear-gradient(135deg,var(--dark),var(--gray));color:#fff;padding:8px 15px;border-radius:8px;font-size:12px;font-weight:600;}
+.flow-a{color:var(--pri);font-size:18px;font-weight:bold;}
+
+.eye-wrap{display:flex;justify-content:center;margin:18px 0;}
+.eye-wrap svg{max-width:100%;height:auto;}
+
+.footer{margin-left:230px;padding:20px 40px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;text-align:center;}
+.stt{position:fixed;bottom:28px;right:28px;width:40px;height:40px;background:var(--pri);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:18px;box-shadow:0 4px 12px rgba(99,102,241,.3);display:none;z-index:1001;}
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <button class="toc-btn" onclick="document.querySelector('.toc').classList.toggle('open')">☰</button>
+  <div class="logo">
+    <div class="logo-icon">M5</div>
+    <div class="logo-text"><em>M-PHY 5.0</em> Seminar</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="badge">📡 MIPI 高速物理层</div>
+  <div class="date">HS-G5 · UFS 4.0</div>
+</header>
+
+<nav class="toc" id="toc">
+  <h4>目录导航</h4>
+  <a href="#s0">〇、背景定位</a>
+  <a href="#s1">一、五大新特性</a>
+  <a href="#f1" class="sub">└ 1 HS-G5 速率档</a>
+  <a href="#f2" class="sub">└ 2 速率优化/简化 PLL</a>
+  <a href="#f3" class="sub">└ 3 Eye Monitor ★</a>
+  <a href="#f4" class="sub">└ 4 G5 新均衡属性</a>
+  <a href="#f5" class="sub">└ 5 规范瘦身/高速启动</a>
+  <a href="#s2">二、版本对比表</a>
+  <a href="#t1" class="sub">└ 版本演进主表</a>
+  <a href="#t2" class="sub">└ v4.1↔v5.0 差异表</a>
+  <a href="#s3">三、讲述建议</a>
+  <a href="#s4">四、参考来源</a>
+</nav>
+
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="eyebrow">MIPI M-PHY® Version 5.0 · 2021-12-14</div>
+  <h1>MIPI M-PHY 5.0 (HS-G5) 新特性解析</h1>
+  <h2>为 UFS 4.0 而生 — 速率翻倍、片内 Eye Monitor 与超高速均衡</h2>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="val">23.32</div><div class="lbl">Gbps / lane</div></div>
+    <div class="hero-stat"><div class="val">93.28</div><div class="lbl">Gbps / 4-lane</div></div>
+    <div class="hero-stat"><div class="val">×2</div><div class="lbl">相比 G4 翻倍</div></div>
+    <div class="hero-stat"><div class="val">5</div><div class="lbl">项新特性</div></div>
+    <div class="hero-stat"><div class="val">8b10b</div><div class="lbl">线编码(不变)</div></div>
+  </div>
+</div>
+
+<!-- 〇 背景 -->
+<span class="anchor" id="s0"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">〇</span>背景定位</h2>
+  <p>M-PHY 是 MIPI 的高速<strong>物理层</strong>，采用<strong>差分信号 + 嵌入式时钟（embedded clock）</strong>，最出名的用途是作为 <strong>UniPro 的物理层，进而构成 JEDEC UFS 闪存存储</strong>的底层。每一代 M-PHY 的核心动作就是"<strong>加一个新 Gear（速率档）+ 一堆配套电气/调试增强</strong>"。</p>
+  <div class="hbox cyan">
+    v5.0 对应 <strong>UniPro v2.0 / UFS 4.0</strong> 时代 · 发布于 <strong>2021-12-14</strong> · <strong>向后兼容至 v4.1</strong>。
+  </div>
+  <div class="note">
+    完整规范只对 MIPI 会员开放，本讲义中速率档、编码、均衡属于行业公开背景知识；寄存器/属性级精确数值属会员保密部分，以 MIPI 会员正式文档为准。
+  </div>
+</div>
+
+<!-- 一 五大新特性 -->
+<span class="anchor" id="s1"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">一</span>M-PHY 5.0 五大新特性</h2>
+  <p>MIPI 官方对 v5.0 的定义是：<strong>新增 HS-G5 一档，并引入四项优化能力 + 一项"瘦身"改动</strong>。下面每条给出「是什么 / 怎么工作 / 优点 / 缺点或代价 / 举例」。</p>
+
+  <div class="flow-h">
+    <span class="flow-s">① G5 速率翻倍<br>制造问题(眼要闭)</span>
+    <span class="flow-a">→</span>
+    <span class="flow-s">④ 新均衡属性<br>把眼张开</span>
+    <span class="flow-a">→</span>
+    <span class="flow-s">③ Eye Monitor<br>在系统量眼&反馈</span>
+    <span class="flow-a">→</span>
+    <span class="flow-s">②⑤ PLL优化/高速启动<br>省电好实现</span>
+  </div>
+  <p style="text-align:center;color:#94a3b8;font-size:12px;">主线：四项优化本质是围绕 <strong>G5 落地</strong>的配套。</p>
+
+  <!-- 特性1 -->
+  <span class="anchor" id="f1"></span>
+  <div class="card">
+    <div class="card-h"><span class="ic ic-b">1</span>新增 HS-G5 速率档（核心特性）</div>
+    <p><strong>是什么：</strong>第五个高速档 High-Speed Gear 5，单 lane <strong>23.32 Gbps</strong>，四 lane 可达 <strong>93.28 Gbps</strong>，相比 HS-G4 直接翻倍。</p>
+    <p><strong>怎么工作：</strong>延续 M-PHY 的 HS-BURST 突发传输机制，高速数据仍用 <strong>8b10b 编码</strong>嵌入时钟；G5 = G4 波特率 ×2（G4 Rate-A 11.66 Gbps → G5 Rate-A 23.32 Gbps），仍保留 Rate-A / Rate-B 两个子速率。</p>
+    <div class="grid2">
+      <div class="pc pro"><div class="pc-h">✔ 优点</div><ul><li>带宽翻倍，支撑 UFS 4.0（2-lane ≈ 46.6 Gbps ≈ 5.8 GB/s 级别）</li><li>lane 可扩展，按需组 1~4 lane</li></ul></div>
+      <div class="pc con"><div class="pc-h">✘ 缺点/代价</div><ul><li>&gt;20 Gbps 后信道损耗、串扰、抖动急剧恶化，强依赖均衡与 eye monitor</li><li>8b10b 有 20% 编码开销（v6.0 才改 1b1b）</li></ul></div>
+    </div>
+    <div class="note"><strong>举例：</strong>手机开机后从 UFS 读系统镜像，HS-G5 让"冷启动读大文件"的物理层吞吐比 UFS 3.1（G4）快一倍，相同数据量搬运时间减半。</div>
+  </div>
+
+  <!-- 特性2 -->
+  <span class="anchor" id="f2"></span>
+  <div class="card">
+    <div class="card-h"><span class="ic ic-p">2</span>速率针对目标应用优化，简化 PLL</div>
+    <p><strong>是什么：</strong>官方原文——"Data rates have been optimized for target applications, simplifying PLL implementation and eliminating design complexity."</p>
+    <p><strong>怎么工作：</strong>把 Gear 速率点选在<strong>便于用同一参考时钟 + 简单 PLL 分频比</strong>生成的频率上，减少为凑速率而需要的复杂小数分频（fractional-N）结构。</p>
+    <div class="grid2">
+      <div class="pc pro"><div class="pc-h">✔ 优点</div><ul><li>PLL 更好设计、更省面积/功耗、抖动更可控</li><li>跨厂互操作更稳</li></ul></div>
+      <div class="pc con"><div class="pc-h">✘ 缺点/代价</div><ul><li>速率点被锁定到少数优化值，灵活性略降</li></ul></div>
+    </div>
+    <div class="note"><strong>举例：</strong>IP 供应商做 UFS 4.0 PHY 时，用一个整数分频 PLL 就能覆盖 G1~G5，不必为 G5 单独设计小数分频时钟树。</div>
+  </div>
+
+  <!-- 特性3 Eye Monitor -->
+  <span class="anchor" id="f3"></span>
+  <div class="card star">
+    <div class="card-h"><span class="ic ic-o">3</span>Eye Monitor（片内眼图监测）— 本次重点 ★</div>
+    <p><strong>是什么：</strong>接收端<strong>内建的信号眼图 / 信号健康可视化能力</strong>。官方："Eye monitoring visualizes signal health, enhancing debug functionality."</p>
+    <p><strong>怎么工作（原理，行业通用实现）：</strong></p>
+    <ul>
+      <li>除负责正常判决的<strong>主采样器（data sampler）</strong>，RX 里再放一个可编程的<strong>监测采样器（monitor sampler）</strong>。</li>
+      <li>让监测采样器的<strong>采样相位（水平/时间轴）</strong>和<strong>判决门限电压（垂直/电压轴）</strong>在二维网格上扫描。</li>
+      <li>每个 (相位, 电压) 网格点，把监测采样结果与主采样结果比对，统计错误率 → 判断该点"眼内 / 眼外"。</li>
+      <li>扫完整网格得到<strong>片内重建的二维眼图 / BER 等高线（bathtub）</strong>，据此算出<strong>水平眼宽（时序裕量）+ 垂直眼高（电压裕量）</strong>。</li>
+    </ul>
+
+    <div class="eye-wrap">
+      <svg width="620" height="230" viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6366f1"/></marker>
+        </defs>
+        <rect x="8" y="14" width="130" height="46" rx="8" fill="#0f172a"/>
+        <text x="73" y="34" fill="#fff" font-size="12" text-anchor="middle" font-family="sans-serif">接收信号</text>
+        <text x="73" y="50" fill="#67e8f9" font-size="10" text-anchor="middle" font-family="sans-serif">RX in</text>
+
+        <rect x="210" y="6" width="150" height="44" rx="8" fill="#1e293b"/>
+        <text x="285" y="24" fill="#fff" font-size="11" text-anchor="middle" font-family="sans-serif">主采样器</text>
+        <text x="285" y="40" fill="#a5b4fc" font-size="9.5" text-anchor="middle" font-family="sans-serif">正常判决数据</text>
+
+        <rect x="210" y="70" width="150" height="50" rx="8" fill="#0e7490"/>
+        <text x="285" y="90" fill="#fff" font-size="11" text-anchor="middle" font-family="sans-serif">监测采样器</text>
+        <text x="285" y="106" fill="#cffafe" font-size="9.5" text-anchor="middle" font-family="sans-serif">相位/电压可扫描</text>
+
+        <rect x="410" y="30" width="120" height="64" rx="8" fill="#4f46e5"/>
+        <text x="470" y="52" fill="#fff" font-size="11" text-anchor="middle" font-family="sans-serif">逐点比对</text>
+        <text x="470" y="68" fill="#e0e7ff" font-size="9.5" text-anchor="middle" font-family="sans-serif">统计误码</text>
+        <text x="470" y="82" fill="#e0e7ff" font-size="9.5" text-anchor="middle" font-family="sans-serif">(BER)</text>
+
+        <rect x="410" y="150" width="200" height="60" rx="8" fill="#0f172a"/>
+        <text x="510" y="174" fill="#67e8f9" font-size="12" text-anchor="middle" font-family="sans-serif">片内二维眼图</text>
+        <text x="510" y="192" fill="#cbd5e1" font-size="10" text-anchor="middle" font-family="sans-serif">眼宽 / 眼高 / 裕量</text>
+
+        <line x1="138" y1="30" x2="208" y2="28" stroke="#6366f1" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="138" y1="44" x2="208" y2="92" stroke="#06b6d4" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="360" y1="28" x2="408" y2="46" stroke="#6366f1" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="360" y1="94" x2="408" y2="74" stroke="#06b6d4" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="470" y1="94" x2="470" y2="148" stroke="#6366f1" stroke-width="2" marker-end="url(#ar)"/>
+      </svg>
+    </div>
+
+    <div class="grid2">
+      <div class="pc pro"><div class="pc-h">✔ 优点</div><ul>
+        <li><strong>不用外接示波器/探针</strong>，量产板、封装内、整机里都能"在系统"看眼图</li>
+        <li>天然服务<strong>自适应均衡</strong>——用眼图裕量反馈去调 TX/RX 均衡参数</li>
+        <li>极大简化<strong>调试与失效分析</strong>，可做在线 margining（裕量监测）</li>
+      </ul></div>
+      <div class="pc con"><div class="pc-h">✘ 缺点/代价</div><ul>
+        <li>多一套采样器 + 状态机 → <strong>额外面积和功耗</strong></li>
+        <li>片内眼是采样器 BER 重建，<strong>绝对精度不如高端实时示波器</strong>，更适合相对趋势/裕量</li>
+        <li>全网格扫描要<strong>时间</strong>，通常在链路空闲/训练阶段做，非逐比特实时</li>
+      </ul></div>
+    </div>
+    <div class="hbox">
+      <strong>Seminar 好用场景：</strong>
+      <ul style="margin-top:6px;">
+        <li><strong>量产测试</strong>：产线不可能每块板接示波器，让芯片"自己报告"眼宽眼高，超阈值判 fail。</li>
+        <li><strong>现场调试</strong>：某手机高温下 UFS 偶发读错，用 eye monitor 抓到高温时垂直眼高塌陷，定位到均衡不足，无需拆机接探针。</li>
+      </ul>
+    </div>
+    <div class="note"><strong>一句话金句：</strong>Eye Monitor 把"看眼图"从实验室仪器<strong>搬进了芯片本身</strong>——这是 v5.0 对工程实践改变最大的一点。</div>
+  </div>
+
+  <!-- 特性4 -->
+  <span class="anchor" id="f4"></span>
+  <div class="card">
+    <div class="card-h"><span class="ic ic-g">4</span>HS-G5 新均衡属性 + 电气更新</div>
+    <p><strong>是什么：</strong>为 G5 这种超高速率新增<strong>均衡（equalization）相关属性</strong>和其它电气规格更新，官方称提升"ultra-high data rate applications"适配性。</p>
+    <p><strong>怎么工作（原理）：</strong>&gt;20 Gbps 时信道像低通滤波器，拖尾造成<strong>码间干扰 ISI</strong>。对策组合拳：</p>
+    <ul>
+      <li><strong>TX 端 FFE / de-emphasis</strong>：发送前预加重高频，抵消信道衰减；</li>
+      <li><strong>RX 端 CTLE（连续时间线性均衡）</strong>：模拟域拉高高频增益；</li>
+      <li>可能的 <strong>RX DFE（判决反馈均衡）</strong>：用已判决比特消除后续拖尾（tap 数属会员规范）；</li>
+      <li>配合 v4.1 起引入的 <strong>Adapt 训练机制</strong>：RX 请求 TX 发训练码型自适应收敛均衡系数——<strong>eye monitor 正好给这个环路提供裕量反馈</strong>。</li>
+    </ul>
+    <div class="grid2">
+      <div class="pc pro"><div class="pc-h">✔ 优点</div><ul><li>在有损 PCB/连接器上仍能张开眼，保证 23 Gbps 可靠、互操作性好</li></ul></div>
+      <div class="pc con"><div class="pc-h">✘ 缺点/代价</div><ul><li>均衡电路增加功耗、面积、设计与校准复杂度</li><li>训练要时间；参数不当会过均衡放大噪声</li></ul></div>
+    </div>
+    <div class="note"><strong>举例：</strong>主板上 UFS 器件离 SoC 走线较长时，打开 TX de-emphasis + RX CTLE，把原本闭合的 G5 眼重新张开到可判决。</div>
+  </div>
+
+  <!-- 特性5 -->
+  <span class="anchor" id="f5"></span>
+  <div class="card">
+    <div class="card-h"><span class="ic ic-c">5</span>规范"瘦身"— 部分旧特性改可选 + 高速启动降延迟</div>
+    <p><strong>是什么：</strong>官方——把若干 <strong>legacy 特性变成可选（optional）</strong>，进一步降低延迟、提高功耗效率，并让实现"更平滑更快"；同时含<strong>高速启动（High-speed startup）降低上电访问闪存的延迟</strong>。</p>
+    <p><strong>怎么工作：</strong>允许实现者裁掉用不到的老配置；优化上电/退出低功耗态到进入 HS 的握手流程，减少进入高速前的等待。</p>
+    <div class="grid2">
+      <div class="pc pro"><div class="pc-h">✔ 优点</div><ul><li>芯片更小更省电，UFS 上电到可读延迟更短</li><li>实现门槛降低</li></ul></div>
+      <div class="pc con"><div class="pc-h">✘ 缺点/代价</div><ul><li>"可选"意味着不同实现特性集可能不同，互操作靠一致性测试兜底（v5.0 测试套件 2022 补齐）</li></ul></div>
+    </div>
+    <div class="note"><strong>举例：</strong>手机从待机唤醒读闪存，高速启动让 PHY 更快从省电态切到 G5，用户感知的 App 冷启动更快。</div>
+  </div>
+</div>
+
+<!-- 二 对比表 -->
+<span class="anchor" id="s2"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">二</span>v5.0 vs 以前版本 对比表</h2>
+
+  <span class="anchor" id="t1"></span>
+  <h3>2.1 版本演进主表</h3>
+  <table>
+    <thead><tr><th>版本</th><th>年份</th><th>最高 Gear</th><th>单 lane 峰值</th><th>线编码</th><th>对应 UFS/UniPro</th><th>Remark（关键差异）</th></tr></thead>
+    <tbody>
+      <tr><td>v1.0</td><td>2011</td><td>HS-G1</td><td>~1.25 Gbps</td><td>8b10b</td><td>早期</td><td>M-PHY 起点，确立 PWM 低速 + HS 高速两大模式</td></tr>
+      <tr><td>v2.0</td><td>~2012</td><td>HS-G2</td><td>~2.5 Gbps</td><td>8b10b</td><td>UFS 2.0 前身</td><td>速率翻倍</td></tr>
+      <tr><td>v3.0/3.1</td><td>2014</td><td>HS-G3</td><td>~5.8 Gbps</td><td>8b10b</td><td>UFS 2.0/2.1</td><td>翻倍；3.1 电气细化</td></tr>
+      <tr><td>v4.0</td><td>~2015</td><td>HS-G4</td><td>~11.66 Gbps</td><td>8b10b</td><td>UFS 3.0</td><td>翻倍，进入 &gt;10 Gbps，均衡需求上升</td></tr>
+      <tr><td>v4.1</td><td>~2020</td><td>HS-G4</td><td>~11.66 Gbps</td><td>8b10b</td><td>UFS 3.1</td><td><strong>引入 Adapt 均衡自适应训练</strong>（v5.0 均衡的基础）</td></tr>
+      <tr class="hi"><td><strong>v5.0</strong></td><td><strong>2021</strong></td><td><strong>HS-G5</strong></td><td><strong>23.32 Gbps</strong></td><td>8b10b</td><td><strong>UFS 4.0 / UniPro v2.0</strong></td><td><strong>翻倍 + Eye Monitor + G5 新均衡属性 + PLL 优化 + 高速启动 + legacy 可选</strong></td></tr>
+      <tr><td>v6.0</td><td>2026</td><td>HS-G6</td><td>~46.69 Gbps</td><td><strong>1b1b (PAM-4)</strong></td><td>UFS 5.0 / UniPro v3.0</td><td>首用 PAM-4，改 1b1b 把编码开销降到 &lt;10%，新增链路均衡训练</td></tr>
+    </tbody>
+  </table>
+  <div class="hbox">
+    <strong>Remark 主线：</strong>v1.0→v5.0 每代基本是"<strong>速率翻倍 + 8b10b 不变</strong>"；到 <strong>v6.0 才第一次换调制方式（PAM-4）和线编码（1b1b）</strong>。v5.0 是"8b10b + NRZ 路线的收官高峰"。
+  </div>
+
+  <span class="anchor" id="t2"></span>
+  <h3>2.2 v5.0 相对 v4.1 的逐特性差异表（Seminar 重点）</h3>
+  <table>
+    <thead><tr><th>维度</th><th>v4.1（HS-G4 时代）</th><th>v5.0（HS-G5）</th><th>Remark 差异</th></tr></thead>
+    <tbody>
+      <tr><td>最高速率</td><td>11.66 Gbps/lane</td><td><strong>23.32 Gbps/lane，4-lane 93.28 Gbps</strong></td><td>翻倍，支撑 UFS 4.0</td></tr>
+      <tr><td>均衡</td><td>有 Adapt 自适应</td><td>G5 新增均衡属性 + 电气更新</td><td>为 &gt;20 Gbps 有损信道强化 EQ</td></tr>
+      <tr class="hi"><td>信号健康观测</td><td>主要靠外部仪器</td><td><strong>内建 Eye Monitor</strong></td><td><strong>本代最大调试增强</strong>：片内看眼图/裕量</td></tr>
+      <tr><td>PLL/时钟</td><td>速率点较杂</td><td>速率优化，简化 PLL</td><td>降设计复杂度、面积、抖动</td></tr>
+      <tr><td>上电/启动</td><td>常规启动</td><td>高速启动降延迟</td><td>UFS 上电访问更快</td></tr>
+      <tr><td>规范体量</td><td>较多强制特性</td><td>部分 legacy 改可选</td><td>更省电、更低延迟、实现更简单</td></tr>
+      <tr><td>兼容性</td><td>—</td><td>向后兼容至 v4.1</td><td>平滑升级</td></tr>
+      <tr><td>编码</td><td>8b10b</td><td>8b10b（不变）</td><td>到 v6.0 才换 1b1b/PAM-4</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 三 讲述建议 -->
+<span class="anchor" id="s3"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">三</span>Seminar 讲述建议</h2>
+  <ol>
+    <li><strong>一条主线串起来：</strong>v5.0 = "速率翻倍(G5)"制造问题(&gt;20 Gbps 眼要闭) → 用"新均衡属性"张开眼 → 用"Eye Monitor"在系统量眼并反馈给均衡 → 再加"PLL 优化/高速启动/legacy 可选"让它省电好实现。</li>
+    <li><strong>把 Eye Monitor 当高潮：</strong>现场画"主采样器 + 监测采样器扫二维网格"的图，再举"产线无示波器测试"和"高温现场调试"两个例子，听众最有共鸣。</li>
+    <li><strong>对比表放两张：</strong>先放版本演进主表给全局观，再放 v4.1↔v5.0 差异表落到细节。</li>
+    <li><strong>诚实标注边界：</strong>tap 数、寄存器属性、精确 Rate-B 数值属 MIPI 会员保密，避免被追问时露怯。</li>
+  </ol>
+</div>
+
+<!-- 四 来源 -->
+<span class="anchor" id="s4"></span>
+<div class="sec">
+  <h2 class="stitle"><span class="n">四</span>参考来源</h2>
+  <ul>
+    <li>MIPI 官方 M-PHY 规范概览页（Version Updates 一节，列出 v5.0 / v6.0 特性）</li>
+    <li>MIPI 新闻稿：<em>M-PHY Update Doubles Peak Data Rate…</em>（2021-12-14，四项优化能力原文）</li>
+    <li>MIPI 博客：<em>M-PHY v5.0 Driven By Next-Generation Flash Memory Storage Applications</em></li>
+    <li>MIPI 新闻稿：<em>MIPI Releases UniPro v3.0 and M-PHY v6.0</em>（HS-G6 / PAM-4 / 1b1b）</li>
+    <li>Gear 速率 / 编码 / 均衡为行业公开背景知识；规范细节以 MIPI 会员正式文档为准。</li>
+  </ul>
+</div>
+
+</main>
+
+<footer class="footer">
+  MIPI M-PHY® 5.0 Seminar 讲义 · 基于 MIPI 公开资料整理 · 生成于 2026-08
+</footer>
+
+<button class="stt" id="stt" onclick="scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+const links=[...document.querySelectorAll('.toc a')];
+const stt=document.getElementById('stt');
+addEventListener('scroll',()=>{
+  stt.style.display=scrollY>500?'block':'none';
+  let cur='';
+  document.querySelectorAll('.anchor').forEach(a=>{
+    if(a.getBoundingClientRect().top<120)cur='#'+a.id;
+  });
+  links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')===cur));
+});
+</script>
+</body>
+</html>
